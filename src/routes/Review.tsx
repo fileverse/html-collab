@@ -13,7 +13,6 @@ export default function Review() {
   const { shareId } = useParams<{ shareId: string }>()
   const [phase, setPhase] = useState<Phase>('loading')
   const [fileName, setFileName] = useState('')
-  const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [gateError, setGateError] = useState<string | null>(null)
   const [html, setHtml] = useState<string | null>(null)
@@ -22,7 +21,7 @@ export default function Review() {
   // Comments come from the shared source of truth once unlocked (add-only).
   const ctrl = useRemoteComments(phase === 'ready' ? (shareId ?? null) : null, password, {
     owner: false,
-    author: name.trim() || 'Guest',
+    author: 'Guest',
   })
 
   useEffect(() => {
@@ -78,34 +77,25 @@ export default function Review() {
             e.preventDefault()
             void open(password)
           }}
-          className="w-[360px] max-w-[calc(100vw-2rem)] rounded-2xl border border-line bg-white p-6 shadow-[0px_8px_32px_0px_rgba(0,0,0,0.15)]"
+          className="flex w-[400px] max-w-[calc(100vw-2rem)] flex-col items-center rounded-2xl border border-line bg-white p-8 text-center shadow-[0px_8px_32px_0px_rgba(0,0,0,0.15)]"
         >
-          <Logo />
-          <h1 className="mt-4 text-lg font-semibold text-ink">Password required</h1>
-          <p className="mt-1 text-sm text-muted">
-            <span className="font-medium text-ink">{fileName}</span> is protected. Enter the
-            password to review it.
-          </p>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
-            className="mt-4 w-full rounded-lg border border-line p-2.5 text-sm text-ink outline-none placeholder:text-muted focus:border-ink/30"
-          />
+          <Logo size={48} />
+          <h1 className="mt-5 text-xl font-medium text-ink">Password required</h1>
+          <p className="mt-1.5 text-sm text-muted">You need a password to access this file</p>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password"
+            placeholder="Enter password"
             autoFocus
-            className="mt-2 w-full rounded-lg border border-line p-2.5 text-sm text-ink outline-none placeholder:text-muted focus:border-ink/30"
+            className="mt-5 w-full rounded-lg border border-line p-3 text-sm text-ink outline-none placeholder:text-muted focus:border-ink/30"
           />
-          {gateError && <p className="mt-2 text-xs text-red-500">{gateError}</p>}
+          {gateError && <p className="mt-2 w-full text-left text-xs text-red-500">{gateError}</p>}
           <button
             type="submit"
-            className="mt-4 w-full rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-ink/90"
+            className="mt-3 w-full rounded-lg bg-black px-4 py-3 text-sm font-medium text-white transition hover:bg-black/90"
           >
-            Open review
+            Continue
           </button>
         </form>
       </div>
@@ -127,7 +117,7 @@ export default function Review() {
         </div>
         <div className="pointer-events-auto flex items-center gap-3">
           <span className="text-xs text-muted">
-            Commenting as <span className="font-medium text-ink">{name.trim() || 'Guest'}</span>
+            Commenting as <span className="font-medium text-ink">Guest</span>
           </span>
           <button
             type="button"

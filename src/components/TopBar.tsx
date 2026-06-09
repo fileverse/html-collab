@@ -1,102 +1,143 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
-import { Logo, UploadIcon, CommentIcon, ShareIcon, DownloadIcon } from './icons'
+import { Logo, UploadIcon, CommentIcon, ShareIcon, DownloadIcon, LoginIcon } from './icons'
+
+const FLOAT_SHADOW = 'shadow-[0px_4px_8px_0px_rgba(0,0,0,0.15)]'
 
 type TopBarProps = {
-  /** Landing page shows the chrome but the actions are inert. */
-  disabled?: boolean
   /** Number shown on the Comments toggle badge. */
   commentCount?: number
   /** Whether the comments drawer is currently open (highlights the toggle). */
   commentsOpen?: boolean
-  /** Toggle the comments drawer (Editor only). */
   onToggleComments?: () => void
-  /** Export the document with baked-in feedback (Editor only). */
-  onDownload?: () => void
-  /** Open the share popover (Editor only). */
-  onShare?: () => void
-  /** Whether the share popover is open (highlights the button). */
-  shareOpen?: boolean
-  /** Import a different file (Editor only). */
+  /** Import / open a file. */
   onUpload?: () => void
+  /** Open the share popover; disabled until a doc exists. */
+  onShare?: () => void
+  shareOpen?: boolean
+  shareDisabled?: boolean
+  /** Export with baked-in feedback; disabled until a doc exists. */
+  onDownload?: () => void
+  downloadDisabled?: boolean
+  /** Log in (no auth yet — inert placeholder to match the design). */
+  onLogin?: () => void
 }
 
 export default function TopBar({
-  disabled = false,
   commentCount = 0,
   commentsOpen = false,
   onToggleComments,
-  onDownload,
+  onUpload,
   onShare,
   shareOpen = false,
-  onUpload,
+  shareDisabled = false,
+  onDownload,
+  downloadDisabled = false,
+  onLogin,
 }: TopBarProps) {
   return (
-    <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between px-5 py-4">
+    <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between p-6">
       <div className="pointer-events-auto">
         <Logo />
       </div>
 
       <div className="pointer-events-auto flex items-center gap-2">
-        <IconButton title="Import another file" disabled={disabled} onClick={onUpload}>
+        <FloatBtn title="Upload" onClick={onUpload}>
           <UploadIcon />
-        </IconButton>
-        <IconButton
+        </FloatBtn>
+
+        <FloatBtn
           title="Comments"
-          disabled={disabled}
           active={commentsOpen}
           badge={commentCount > 0 ? commentCount : undefined}
           onClick={onToggleComments}
         >
           <CommentIcon />
-        </IconButton>
+        </FloatBtn>
 
-        <button
-          type="button"
-          disabled={disabled}
+        <Pill
+          title="Share"
           onClick={onShare}
-          className={cn(
-            'flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium shadow-sm transition',
-            shareOpen
-              ? 'border-neutral-900 bg-neutral-900 text-white'
-              : 'border-neutral-200 bg-white text-neutral-800 hover:bg-neutral-50',
-            disabled && 'cursor-not-allowed opacity-40 hover:bg-white',
-          )}
+          active={shareOpen}
+          disabled={shareDisabled}
         >
-          <ShareIcon size={16} />
+          <ShareIcon />
           Share
-        </button>
+        </Pill>
 
-        <button
-          type="button"
-          disabled={disabled}
+        <Pill
+          title="Download"
           onClick={onDownload}
-          className={cn(
-            'flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 shadow-sm transition hover:bg-neutral-50',
-            disabled && 'cursor-not-allowed opacity-40 hover:bg-white',
-          )}
+          disabled={downloadDisabled}
+          disabledFilled
         >
-          <DownloadIcon size={16} />
+          <DownloadIcon />
           Download
-        </button>
+        </Pill>
+
+        <FloatBtn title="Log in" onClick={onLogin}>
+          <LoginIcon />
+        </FloatBtn>
       </div>
     </header>
   )
 }
 
-function IconButton({
+/** 36px round white floating button (Figma: floating-button). */
+function FloatBtn({
   children,
   title,
-  disabled,
   active,
   badge,
   onClick,
 }: {
   children: ReactNode
   title: string
-  disabled?: boolean
   active?: boolean
   badge?: number
+  onClick?: () => void
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      onClick={onClick}
+      className={cn(
+        'relative grid size-9 place-items-center rounded-full transition',
+        FLOAT_SHADOW,
+        active ? 'bg-ink text-white' : 'bg-white text-ink hover:bg-neutral-50',
+      )}
+    >
+      {children}
+      {badge !== undefined && (
+        <span
+          className={cn(
+            'absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold ring-2 ring-white',
+            active ? 'bg-brand text-ink' : 'bg-ink text-white',
+          )}
+        >
+          {badge}
+        </span>
+      )}
+    </button>
+  )
+}
+
+/** Pill button with leading icon + label (Figma: Share / Download). */
+function Pill({
+  children,
+  title,
+  active,
+  disabled,
+  disabledFilled,
+  onClick,
+}: {
+  children: ReactNode
+  title: string
+  active?: boolean
+  disabled?: boolean
+  /** Download's disabled state has a filled (#e8ebec) background. */
+  disabledFilled?: boolean
   onClick?: () => void
 }) {
   return (
@@ -106,24 +147,16 @@ function IconButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        'relative grid h-9 w-9 place-items-center rounded-full border shadow-sm transition',
-        active
-          ? 'border-neutral-900 bg-neutral-900 text-white'
-          : 'border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50',
-        disabled && 'cursor-not-allowed opacity-40 hover:bg-white',
+        'flex h-9 min-w-20 items-center justify-center gap-2 rounded-full px-3 text-sm font-medium transition',
+        FLOAT_SHADOW,
+        disabled
+          ? cn('cursor-not-allowed text-disabled', disabledFilled ? 'bg-line' : 'bg-white')
+          : active
+            ? 'bg-ink text-white'
+            : 'bg-white text-ink hover:bg-neutral-50',
       )}
     >
       {children}
-      {badge !== undefined && (
-        <span
-          className={cn(
-            'absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold ring-2 ring-white',
-            active ? 'bg-brand text-neutral-900' : 'bg-neutral-900 text-white',
-          )}
-        >
-          {badge}
-        </span>
-      )}
     </button>
   )
 }

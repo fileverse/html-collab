@@ -4,21 +4,27 @@ import TopBar from '@/components/TopBar'
 export default function ImportingState({ fileName }: { fileName?: string }) {
   return (
     <div className="relative min-h-screen bg-dotgrid">
-      <TopBar disabled />
+      <TopBar shareDisabled downloadDisabled />
       <div className="grid min-h-screen place-items-center">
-        <div className="flex flex-col items-center">
-          <div className="grid w-[260px] grid-cols-2 gap-3">
-            <div className="h-16 animate-pulse rounded-lg border border-dashed border-neutral-300 bg-white/70" />
-            <div className="h-16 animate-pulse rounded-lg border border-dashed border-neutral-300 bg-white/70" />
-            <div className="h-16 animate-pulse rounded-lg border border-dashed border-neutral-300 bg-white/70" />
-            <div className="h-16 animate-pulse rounded-lg border border-dashed border-neutral-300 bg-white/70" />
+        <div className="flex flex-col items-center gap-4">
+          {/* staggered skeleton (Figma) */}
+          <div className="flex animate-pulse flex-col gap-3">
+            <div className="flex gap-3">
+              <div className="size-[72px] rounded-lg border border-dashed border-line" />
+              <div className="h-[72px] w-[160px] rounded-lg border border-dashed border-line" />
+            </div>
+            <div className="flex gap-3">
+              <div className="h-[72px] w-[160px] rounded-lg border border-dashed border-line" />
+              <div className="size-[72px] rounded-lg border border-dashed border-line" />
+            </div>
           </div>
-          <div className="mt-6 flex items-center gap-2 text-sm text-neutral-500">
-            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-700" />
+          <div className="flex items-center gap-2 text-sm text-muted">
+            <span className="size-3.5 animate-spin rounded-full border-2 border-line border-t-muted" />
             Reading HTML file{fileName ? ` — ${fileName}` : ''}
           </div>
         </div>
       </div>
+      <p className="absolute bottom-6 left-6 text-xs leading-4 text-muted">Open source</p>
     </div>
   )
 }
