@@ -115,12 +115,17 @@ export default function Editor() {
             comments={comments}
             activeId={activeId}
             mode="comment"
-            onSelect={(id) => {
-              setActiveId(id)
-              if (id) setDrawerOpen(true) // open the list when reading an existing pin
-            }}
+            onSelect={setActiveId}
+            onResolve={ctrl.resolve}
+            onDelete={
+              ctrl.remove
+                ? (id) => {
+                    ctrl.remove?.(id)
+                    setActiveId((cur) => (cur === id ? null : cur))
+                  }
+                : undefined
+            }
             onCreate={async (draft) => {
-              // commenting works with the sidebar closed — don't force it open
               const c = await ctrl.add(draft)
               if (c) setActiveId(c.id)
             }}

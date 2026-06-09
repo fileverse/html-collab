@@ -176,10 +176,7 @@ export default function Review() {
               comments={ctrl.comments}
               activeId={activeId}
               mode="comment"
-              onSelect={(id) => {
-                setActiveId(id)
-                if (id) setDrawerOpen(true)
-              }}
+              onSelect={setActiveId}
               onCreate={async (draft) => {
                 const c = await ctrl.add(draft)
                 if (c) setActiveId(c.id)

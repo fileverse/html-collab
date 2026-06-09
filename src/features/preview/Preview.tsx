@@ -3,6 +3,9 @@ import agentRaw from './agent.js?raw'
 import { cn } from '@/lib/cn'
 import type { Comment, CommentDraft } from '@/store/useCommentStore'
 import Composer from '@/features/comments/Composer'
+import Avatar from '@/features/comments/Avatar'
+import { formatTime } from '@/features/comments/format'
+import { CloseIcon, ResolveIcon, TrashIcon, VerifiedBadge } from '@/components/icons'
 import type { AgentMessage, Anchor, HostMessage, PreviewMode, Rect } from './types'
 
 /** Inject the agent script into arbitrary user HTML, just before </body>. */
@@ -23,9 +26,21 @@ type PreviewProps = {
   mode: PreviewMode
   onSelect: (id: string | null) => void
   onCreate: (draft: CommentDraft) => void
+  /** Owner-only actions, shown in the focused-marker popover. */
+  onResolve?: (id: string) => void
+  onDelete?: (id: string) => void
 }
 
-export default function Preview({ html, comments, activeId, mode, onSelect, onCreate }: PreviewProps) {
+export default function Preview({
+  html,
+  comments,
+  activeId,
+  mode,
+  onSelect,
+  onCreate,
+  onResolve,
+  onDelete,
+}: PreviewProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const surfaceRef = useRef<HTMLDivElement>(null)
   const [hover, setHover] = useState<{ rect: Rect; label: string } | null>(null)
@@ -33,6 +48,7 @@ export default function Preview({ html, comments, activeId, mode, onSelect, onCr
   const [draft, setDraft] = useState<Draft | null>(null)
   const [size, setSize] = useState({ w: 0, h: 0 })
   const [contentWidth, setContentWidth] = useState(0)
+  const [hoveredId, setHoveredId] = useState<string | null>(null)
 
   const srcDoc = useMemo(() => buildSrcDoc(html), [html])
 
@@ -135,8 +151,8 @@ export default function Preview({ html, comments, activeId, mode, onSelect, onCr
     return { left: (rect.x + rect.w * offset.x) * scale, top: (rect.y + rect.h * offset.y) * scale }
   }
 
-  // Composer sits beside the (already-scaled) draft pin, clamped to the surface.
-  function composerPos(p: { left: number; top: number }) {
+  // Popover/composer sits beside the (already-scaled) marker, clamped to surface.
+  function popoverPos(p: { left: number; top: number }) {
     const w = size.w || 800
     const h = size.h || 600
     const left = p.left + 300 > w ? p.left - 300 : p.left + 12
@@ -182,34 +198,64 @@ export default function Preview({ html, comments, activeId, mode, onSelect, onCr
           />
         )}
 
-        {comments.map((c, i) => {
-          const r = rects[c.id]
-          if (!r) return null
-          const { left, top } = pinPoint(r, c.offset)
-          return (
-            <button
-              key={c.id}
-              type="button"
-              onClick={() => onSelect(activeId === c.id ? null : c.id)}
-              className="pointer-events-auto absolute -translate-x-1/2 -translate-y-full"
-              style={{ left, top }}
-            >
-              <Pin active={activeId === c.id} resolved={c.resolved} n={i + 1} />
-            </button>
-          )
-        })}
+        {/* markers — small avatar dots; resolved ones stay in the sidebar only */}
+        {!draft &&
+          comments.map((c) => {
+            if (c.resolved) return null
+            const r = rects[c.id]
+            if (!r) return null
+            const { left, top } = pinPoint(r, c.offset)
+            return (
+              <button
+                key={c.id}
+                type="button"
+                onClick={() => onSelect(activeId === c.id ? null : c.id)}
+                onMouseEnter={() => setHoveredId(c.id)}
+                onMouseLeave={() => setHoveredId((h) => (h === c.id ? null : h))}
+                className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2"
+                style={{ left, top }}
+              >
+                <Marker name={c.author} active={activeId === c.id} />
+              </button>
+            )
+          })}
+
+        {/* one popover: focused (clicked) marker, else a hover preview */}
+        {!draft &&
+          (() => {
+            const id = activeId ?? hoveredId
+            if (!id) return null
+            const c = comments.find((x) => x.id === id)
+            const r = c && rects[id]
+            if (!c || !r) return null
+            const focused = activeId === id
+            return (
+              <div
+                className={cn('absolute', focused ? 'pointer-events-auto z-20' : 'pointer-events-none z-10')}
+                style={popoverPos(pinPoint(r, c.offset))}
+              >
+                <CommentPopover
+                  comment={c}
+                  focused={focused}
+                  onResolve={onResolve}
+                  onDelete={onDelete}
+                  onClose={() => onSelect(null)}
+                />
+              </div>
+            )
+          })()}
 
         {draft && (
           <>
             <div
-              className="absolute -translate-x-1/2 -translate-y-full"
+              className="absolute -translate-x-1/2 -translate-y-1/2"
               style={pinPoint(draft.rect, draft.offset)}
             >
-              <Pin active n={comments.length + 1} />
+              <span className="block size-5 rounded-full rounded-bl-none bg-brand shadow-md ring-2 ring-white" />
             </div>
             <div
-              className="pointer-events-auto absolute z-10"
-              style={composerPos(pinPoint(draft.rect, draft.offset))}
+              className="pointer-events-auto absolute z-20"
+              style={popoverPos(pinPoint(draft.rect, draft.offset))}
             >
               <Composer
                 onSubmit={(body) => {
@@ -226,16 +272,85 @@ export default function Preview({ html, comments, activeId, mode, onSelect, onCr
   )
 }
 
-function Pin({ active, resolved, n }: { active: boolean; resolved?: boolean; n: number }) {
+/** Small avatar marker (Figma comment mark). */
+function Marker({ name, active }: { name: string; active: boolean }) {
   return (
     <span
       className={cn(
-        'grid h-6 min-w-6 select-none place-items-center rounded-full rounded-bl-none px-1.5 text-xs font-bold shadow-md ring-2 ring-white transition',
-        active ? 'bg-ink text-white' : 'bg-brand text-ink',
-        resolved && !active && 'bg-neutral-300 text-neutral-600',
+        'block rounded-full shadow-[0px_2px_6px_0px_rgba(0,0,0,0.25)] ring-2 transition',
+        active ? 'scale-110 ring-ink' : 'ring-white hover:scale-110',
       )}
     >
-      {n}
+      <Avatar name={name} size={24} />
     </span>
+  )
+}
+
+/** Hover preview (read-only) / focused thread for a comment marker. */
+function CommentPopover({
+  comment,
+  focused,
+  onResolve,
+  onDelete,
+  onClose,
+}: {
+  comment: Comment
+  focused: boolean
+  onResolve?: (id: string) => void
+  onDelete?: (id: string) => void
+  onClose: () => void
+}) {
+  return (
+    <div className="w-72 rounded-xl border border-line bg-white p-3 shadow-[0px_8px_32px_0px_rgba(0,0,0,0.15)]">
+      <div className="flex items-center gap-2">
+        <Avatar name={comment.author} />
+        <div className="flex min-w-0 flex-1 items-center gap-1">
+          <span className="truncate text-sm font-medium text-ink">{comment.author}</span>
+          <VerifiedBadge />
+        </div>
+        <span className="shrink-0 text-xs text-muted">{formatTime(comment.createdAt)}</span>
+        {focused && (
+          <button
+            type="button"
+            title="Close"
+            onClick={onClose}
+            className="grid size-6 place-items-center rounded text-muted transition hover:bg-black/5"
+          >
+            <CloseIcon size={12} />
+          </button>
+        )}
+      </div>
+      <p className={cn('mt-2 whitespace-pre-wrap text-sm leading-5 text-ink', !focused && 'line-clamp-4')}>
+        {comment.body}
+      </p>
+      {focused && (onResolve || onDelete) && (
+        <div className="mt-2 flex items-center gap-1 border-t border-line pt-2">
+          {onResolve && (
+            <button
+              type="button"
+              onClick={() => {
+                onResolve(comment.id)
+                onClose()
+              }}
+              className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted transition hover:bg-emerald-50 hover:text-emerald-600"
+            >
+              <ResolveIcon size={13} /> Resolve
+            </button>
+          )}
+          {onDelete && (
+            <button
+              type="button"
+              onClick={() => {
+                onDelete(comment.id)
+                onClose()
+              }}
+              className="flex items-center gap-1.5 rounded-md px-2 py-1 text-xs font-medium text-muted transition hover:bg-red-50 hover:text-red-500"
+            >
+              <TrashIcon size={13} /> Delete
+            </button>
+          )}
+        </div>
+      )}
+    </div>
   )
 }
