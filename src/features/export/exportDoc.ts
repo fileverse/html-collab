@@ -1,54 +1,63 @@
 import type { Comment } from '@/store/useCommentStore'
 
 /**
- * M7 export — bake collected feedback back into the HTML file so it travels
- * with the document and is "ready to re-prompt":
+ * Export — make the collected feedback something an AI agent can reliably act
+ * on. Two complementary outputs:
  *
- *  1. a human/AI-readable re-prompt block (HTML comment) listing each open
- *     ask against its element (label · selector · quote),
- *  2. a machine-readable <script type="application/json"> snapshot so the file
- *     can be re-imported with its comments intact.
+ *  - downloadFeedbackFile(): the original HTML with a prominent re-prompt block
+ *    injected near the TOP (an HTML comment, read first by top-down agents) plus
+ *    a machine-readable <script type="application/json"> snapshot at the bottom
+ *    so the file can be re-imported with its comments intact.
+ *  - copyReprompt(): the same instructions as plain text, for pasting straight
+ *    into a chat agent alongside the file — the most reliable path.
  *
- * The original markup is left untouched; everything is appended before </body>.
+ * The original markup is otherwise left untouched.
  */
 
 const MARKER_START = 'AI-FEEDBACK-LOOP:BEGIN'
 const MARKER_END = 'AI-FEEDBACK-LOOP:END'
 
-function pad(n: number): string {
-  return n < 10 ? `0${n}` : String(n)
-}
-
-function stamp(d = new Date()): string {
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
-/** Re-prompt instructions for the open (unresolved) comments. */
+/** Directive + numbered feedback list (open comments only). Plain text. */
 export function buildReprompt(comments: Comment[]): string {
   const open = comments.filter((c) => !c.resolved)
   const lines: string[] = []
-  lines.push('Apply the following feedback to this HTML and return the updated file.')
-  lines.push('Each item targets one element by CSS selector / id, with a text snippet for disambiguation.')
+  lines.push('AI FEEDBACK LOOP — REVISION REQUEST')
+  lines.push('')
+  lines.push(
+    'This HTML was reviewed and has feedback to apply. Make ALL of the changes',
+  )
+  lines.push(
+    'listed below to the markup, then return the COMPLETE, updated HTML file.',
+  )
+  lines.push('Keep everything else unchanged.')
+  lines.push('')
+  lines.push(
+    'Each item points to one element by CSS selector (and id), with a snippet of',
+  )
+  lines.push('its current text to help you locate it.')
   lines.push('')
 
   if (open.length === 0) {
-    lines.push('(No open comments.)')
+    lines.push('(No open feedback.)')
   } else {
+    lines.push(`OPEN FEEDBACK (${open.length}):`)
+    lines.push('')
     open.forEach((c, i) => {
-      lines.push(`${i + 1}. [${c.anchor.label}]  selector: ${c.anchor.selector}`)
-      if (c.anchor.quote) lines.push(`   text: "${c.anchor.quote}"`)
-      lines.push(`   feedback (${c.author}): ${c.body}`)
+      lines.push(`${i + 1}. Element:  ${c.anchor.label}   (selector: ${c.anchor.selector})`)
+      if (c.anchor.quote) lines.push(`   Current:  "${c.anchor.quote}"`)
+      lines.push(`   Change:   ${c.body}   — ${c.author}`)
       lines.push('')
     })
   }
+  lines.push('— end of feedback —')
   return lines.join('\n')
 }
 
-/** Full exportable HTML: original markup + baked-in feedback block. */
+/** Full exportable HTML: original markup + a top re-prompt + a JSON snapshot. */
 export function buildExportHtml(html: string, comments: Comment[], fileName: string): string {
-  const reprompt = buildReprompt(comments)
-    // never let user content close the surrounding HTML comment early
-    .replace(/--+>/g, '-- >')
+  const reprompt = buildReprompt(comments).replace(/--+>/g, '-- >') // don't close the comment early
+
+  const topBlock = `<!-- ${MARKER_START} (${fileName})\n\n${reprompt}\n\n${MARKER_END} -->`
 
   const snapshot = {
     generator: 'ai-feedback-loop',
@@ -57,21 +66,19 @@ export function buildExportHtml(html: string, comments: Comment[], fileName: str
     comments,
   }
   const json = JSON.stringify(snapshot, null, 2).replace(/</g, '\\u003c')
+  const jsonBlock = `<script type="application/json" id="aifl-comments">\n${json}\n</script>`
 
-  const block = [
-    `<!-- ${MARKER_START}`,
-    `Generated ${stamp()} · ${fileName}`,
-    '',
-    reprompt,
-    `${MARKER_END} -->`,
-    `<script type="application/json" id="aifl-comments">`,
-    json,
-    `</script>`,
-  ].join('\n')
+  // Put the instructions where a top-down reader sees them first.
+  let out = html
+  if (/<head[^>]*>/i.test(out)) out = out.replace(/(<head[^>]*>)/i, `$1\n${topBlock}`)
+  else if (/<html[^>]*>/i.test(out)) out = out.replace(/(<html[^>]*>)/i, `$1\n${topBlock}`)
+  else out = `${topBlock}\n${out}`
 
-  if (/<\/body>/i.test(html)) return html.replace(/<\/body>/i, `${block}\n</body>`)
-  if (/<\/html>/i.test(html)) return html.replace(/<\/html>/i, `${block}\n</html>`)
-  return `${html}\n${block}\n`
+  // Snapshot at the bottom (data, not instructions).
+  if (/<\/body>/i.test(out)) out = out.replace(/<\/body>/i, `${jsonBlock}\n</body>`)
+  else out = `${out}\n${jsonBlock}\n`
+
+  return out
 }
 
 /** Derive the download name, e.g. "Landing (ONY).html" → "Landing (ONY).feedback.html". */
@@ -90,6 +97,15 @@ export function downloadFeedbackFile(html: string, fileName: string, comments: C
   document.body.appendChild(a)
   a.click()
   a.remove()
-  // give the browser a tick to start the download before revoking
   setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+/** Copy the re-prompt instructions to the clipboard (paste into any AI agent). */
+export async function copyReprompt(comments: Comment[]): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(buildReprompt(comments))
+    return true
+  } catch {
+    return false
+  }
 }

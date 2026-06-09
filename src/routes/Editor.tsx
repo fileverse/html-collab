@@ -6,7 +6,7 @@ import CommentDrawer from '@/features/comments/CommentDrawer'
 import { useLocalComments, useRemoteComments } from '@/features/comments/controllers'
 import { useDocStore } from '@/store/useDocStore'
 import { useShareStore } from '@/store/useShareStore'
-import { downloadFeedbackFile } from '@/features/export/exportDoc'
+import { copyReprompt, downloadFeedbackFile } from '@/features/export/exportDoc'
 import SharePopover from '@/features/share/SharePopover'
 import { loadSampleHtml, sampleFileName } from '@/features/preview/samples'
 
@@ -36,6 +36,7 @@ export default function Editor() {
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   // Dev convenience: /editor?sample=<id> fetches a sample into the store.
   useEffect(() => {
@@ -105,6 +106,21 @@ export default function Editor() {
             </button>
           ) : (
             <span className="text-xs text-neutral-400">v1 · just now</span>
+          )}
+          {comments.length > 0 && (
+            <button
+              type="button"
+              title="Copy the feedback as a re-prompt for your AI agent"
+              onClick={async () => {
+                if (await copyReprompt(comments)) {
+                  setCopied(true)
+                  setTimeout(() => setCopied(false), 1500)
+                }
+              }}
+              className="ml-auto rounded-md border border-neutral-200 bg-white px-2.5 py-1 text-xs font-medium text-neutral-700 transition hover:bg-neutral-50"
+            >
+              {copied ? 'Copied!' : 'Copy re-prompt'}
+            </button>
           )}
         </div>
         <div className="flex flex-1 gap-3 overflow-hidden">
