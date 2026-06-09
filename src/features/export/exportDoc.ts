@@ -2,61 +2,91 @@ import type { Comment } from '@/store/useCommentStore'
 
 /**
  * Export — make the collected feedback something an AI agent can reliably act
- * on. Two complementary outputs:
+ * on, three reinforcing ways:
  *
- *  - downloadFeedbackFile(): the original HTML with a prominent re-prompt block
- *    injected near the TOP (an HTML comment, read first by top-down agents) plus
- *    a machine-readable <script type="application/json"> snapshot at the bottom
- *    so the file can be re-imported with its comments intact.
- *  - copyReprompt(): the same instructions as plain text, for pasting straight
- *    into a chat agent alongside the file — the most reliable path.
+ *  1. inline `data-feedback` attributes on each target element, so an agentic
+ *     file-editor sees the ask right where it edits;
+ *  2. a prominent re-prompt directive injected at the TOP of <head> (read first
+ *     by top-down agents);
+ *  3. a machine-readable <script type="application/json"> snapshot for re-import.
  *
- * The original markup is otherwise left untouched.
+ * `copyReprompt()` gives the same directive as plain text for pasting into chat.
  */
 
 const MARKER_START = 'AI-FEEDBACK-LOOP:BEGIN'
 const MARKER_END = 'AI-FEEDBACK-LOOP:END'
 
 /** Directive + numbered feedback list (open comments only). Plain text. */
-export function buildReprompt(comments: Comment[]): string {
+export function buildReprompt(comments: Comment[], opts: { inline?: boolean } = {}): string {
   const open = comments.filter((c) => !c.resolved)
-  const lines: string[] = []
-  lines.push('AI FEEDBACK LOOP — REVISION REQUEST')
-  lines.push('')
-  lines.push(
+  const lines = [
+    'AI FEEDBACK LOOP — REVISION REQUEST',
+    '',
     'This HTML was reviewed and has feedback to apply. Make ALL of the changes',
-  )
-  lines.push(
     'listed below to the markup, then return the COMPLETE, updated HTML file.',
-  )
-  lines.push('Keep everything else unchanged.')
-  lines.push('')
-  lines.push(
+    'Keep everything else unchanged.',
+    '',
     'Each item points to one element by CSS selector (and id), with a snippet of',
-  )
-  lines.push('its current text to help you locate it.')
+    'its current text to help you locate it.',
+  ]
+  if (opts.inline) {
+    lines.push(
+      '',
+      'The same feedback is attached inline as a `data-feedback` attribute on each',
+      'target element. Apply each change and REMOVE the data-feedback attribute.',
+    )
+  }
   lines.push('')
 
   if (open.length === 0) {
     lines.push('(No open feedback.)')
   } else {
-    lines.push(`OPEN FEEDBACK (${open.length}):`)
-    lines.push('')
+    lines.push(`OPEN FEEDBACK (${open.length}):`, '')
     open.forEach((c, i) => {
       lines.push(`${i + 1}. Element:  ${c.anchor.label}   (selector: ${c.anchor.selector})`)
       if (c.anchor.quote) lines.push(`   Current:  "${c.anchor.quote}"`)
-      lines.push(`   Change:   ${c.body}   — ${c.author}`)
-      lines.push('')
+      lines.push(`   Change:   ${c.body}   — ${c.author}`, '')
     })
   }
   lines.push('— end of feedback —')
   return lines.join('\n')
 }
 
-/** Full exportable HTML: original markup + a top re-prompt + a JSON snapshot. */
-export function buildExportHtml(html: string, comments: Comment[], fileName: string): string {
-  const reprompt = buildReprompt(comments).replace(/--+>/g, '-- >') // don't close the comment early
+/** Tag each open comment's target element with a `data-feedback` attribute. */
+function annotateElements(html: string, comments: Comment[]): string {
+  const open = comments.filter((c) => !c.resolved)
+  if (open.length === 0 || typeof DOMParser === 'undefined') return html
 
+  let doc: Document
+  try {
+    doc = new DOMParser().parseFromString(html, 'text/html')
+  } catch {
+    return html
+  }
+
+  for (const c of open) {
+    let el: Element | null = null
+    if (c.anchor.elementId) el = doc.getElementById(c.anchor.elementId)
+    if (!el && c.anchor.selector) {
+      try {
+        el = doc.querySelector(c.anchor.selector)
+      } catch {
+        /* invalid selector — skip */
+      }
+    }
+    if (!el) continue
+    const note = `${c.body} — ${c.author}`
+    const existing = el.getAttribute('data-feedback')
+    el.setAttribute('data-feedback', existing ? `${existing} ¶ ${note}` : note)
+  }
+
+  const serialized = doc.documentElement.outerHTML
+  return /<!doctype/i.test(html) ? `<!doctype html>\n${serialized}` : serialized
+}
+
+/** Full exportable HTML: inline data-feedback + top re-prompt + JSON snapshot. */
+export function buildExportHtml(html: string, comments: Comment[], fileName: string): string {
+  const reprompt = buildReprompt(comments, { inline: true }).replace(/--+>/g, '-- >')
   const topBlock = `<!-- ${MARKER_START} (${fileName})\n\n${reprompt}\n\n${MARKER_END} -->`
 
   const snapshot = {
@@ -68,13 +98,11 @@ export function buildExportHtml(html: string, comments: Comment[], fileName: str
   const json = JSON.stringify(snapshot, null, 2).replace(/</g, '\\u003c')
   const jsonBlock = `<script type="application/json" id="aifl-comments">\n${json}\n</script>`
 
-  // Put the instructions where a top-down reader sees them first.
-  let out = html
+  let out = annotateElements(html, comments)
   if (/<head[^>]*>/i.test(out)) out = out.replace(/(<head[^>]*>)/i, `$1\n${topBlock}`)
   else if (/<html[^>]*>/i.test(out)) out = out.replace(/(<html[^>]*>)/i, `$1\n${topBlock}`)
   else out = `${topBlock}\n${out}`
 
-  // Snapshot at the bottom (data, not instructions).
   if (/<\/body>/i.test(out)) out = out.replace(/<\/body>/i, `${jsonBlock}\n</body>`)
   else out = `${out}\n${jsonBlock}\n`
 
