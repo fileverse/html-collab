@@ -35,6 +35,7 @@ export type AgentMessage =
       offset: { x: number; y: number }
     }
   | { source: 'aifl-agent'; type: 'rects'; rects: Array<{ id: string; rect: Rect | null }> }
+  | { source: 'aifl-agent'; type: 'size'; contentWidth: number }
 
 /** host (parent) -> iframe (agent) */
 export type HostMessage =

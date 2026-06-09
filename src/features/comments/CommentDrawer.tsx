@@ -1,4 +1,4 @@
-import { CloseIcon } from '@/components/icons'
+import { CloseIcon, CommentIcon } from '@/components/icons'
 import type { Comment } from '@/store/useCommentStore'
 import SingleComment from './SingleComment'
 
@@ -24,8 +24,8 @@ export default function CommentDrawer({
   const open = comments.filter((c) => !c.resolved).length
 
   return (
-    <aside className="flex h-full w-[336px] max-w-[90vw] flex-col overflow-hidden rounded-lg border-l border-line bg-white shadow-[0px_8px_32px_0px_rgba(0,0,0,0.15)]">
-      <header className="flex shrink-0 items-center gap-4 border-b border-line px-4 py-3">
+    <aside className="flex h-full w-[336px] max-w-[90vw] flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+      <header className="flex shrink-0 items-center gap-3 border-b border-neutral-200 px-4 py-3">
         <p className="flex-1 text-base font-medium leading-[22px] text-ink">Comments</p>
         {comments.length > 0 && (
           <span className="text-xs text-muted">
@@ -47,7 +47,7 @@ export default function CommentDrawer({
       {comments.length === 0 ? (
         <div className="flex flex-1 flex-col items-center justify-center px-8 text-center">
           <div className="grid size-10 place-items-center rounded-full bg-black/[0.03] text-muted">
-            <CloseIcon size={14} />
+            <CommentIcon size={18} />
           </div>
           <p className="mt-3 text-sm font-medium text-ink">No comments yet</p>
           <p className="mt-1 text-xs leading-5 text-muted">

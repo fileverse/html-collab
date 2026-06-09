@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Northwind — Pricing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--accent:#4f46e5;--accent-soft:#eef2ff;--bg:#fbfbfd}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,system-ui,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 32px}
+  a{color:inherit;text-decoration:none}
+  .btn{display:block;text-align:center;border-radius:10px;padding:12px 18px;font-weight:600;font-size:15px}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-ghost{border:1px solid var(--line);color:var(--ink)}
+
+  nav{display:flex;align-items:center;justify-content:space-between;padding:20px 0;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:-.02em}
+  .brand .dot{width:24px;height:24px;border-radius:7px;background:var(--accent)}
+  .nav-links{display:flex;gap:28px;color:var(--muted);font-size:15px;font-weight:500}
+
+  .head{text-align:center;padding:72px 0 16px}
+  .head h1{font-size:48px;font-weight:800;letter-spacing:-.03em}
+  .head p{margin-top:14px;color:var(--muted);font-size:19px}
+  .toggle{display:inline-flex;background:#eef0f4;border-radius:999px;padding:4px;margin-top:28px;font-size:14px;font-weight:600}
+  .toggle span{padding:8px 18px;border-radius:999px;color:var(--muted)}
+  .toggle .on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.06)}
+
+  .tiers{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:48px 0 24px}
+  .tier{background:#fff;border:1px solid var(--line);border-radius:18px;padding:30px;display:flex;flex-direction:column}
+  .tier.featured{border:2px solid var(--accent);box-shadow:0 20px 40px -24px rgba(79,70,229,.4);position:relative}
+  .tier .badge{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--accent);color:#fff;font-size:12px;font-weight:700;padding:5px 14px;border-radius:999px}
+  .tier h3{font-size:18px;font-weight:700}
+  .tier .price{font-size:46px;font-weight:800;letter-spacing:-.03em;margin:14px 0 2px}
+  .tier .price small{font-size:16px;font-weight:500;color:var(--muted)}
+  .tier .desc{color:var(--muted);font-size:14px;min-height:40px}
+  .tier ul{list-style:none;margin:22px 0;flex:1}
+  .tier li{display:flex;gap:10px;align-items:flex-start;font-size:15px;margin:11px 0}
+  .tier li .ck{color:var(--accent);font-weight:800}
+
+  .faq{max-width:760px;margin:0 auto;padding:64px 32px 80px}
+  .faq h2{text-align:center;font-size:32px;font-weight:800;letter-spacing:-.02em;margin-bottom:32px}
+  .qa{border-top:1px solid var(--line);padding:22px 0}
+  .qa h4{font-size:17px;font-weight:600;margin-bottom:8px}
+  .qa p{color:var(--muted);font-size:15px}
+</style>
+</head>
+<body>
+  <header class="wrap">
+    <nav>
+      <div class="brand"><span class="dot"></span> Northwind</div>
+      <div class="nav-links"><a href="#">Features</a><a href="#">Pricing</a><a href="#">Customers</a><a href="#">Docs</a></div>
+      <a class="btn btn-primary" style="padding:10px 18px" href="#">Start free</a>
+    </nav>
+  </header>
+
+  <section class="head">
+    <h1 id="headline">Simple, transparent pricing</h1>
+    <p id="subhead">Start free. Upgrade when your team grows. Cancel anytime.</p>
+    <div class="toggle"><span class="on">Monthly</span><span>Yearly · save 20%</span></div>
+  </section>
+
+  <section class="wrap">
+    <div class="tiers">
+      <div class="tier" id="tier-starter">
+        <h3>Starter</h3>
+        <div class="price">$0<small>/mo</small></div>
+        <div class="desc">For individuals and small side projects.</div>
+        <ul>
+          <li><span class="ck">✓</span> Up to 3 projects</li>
+          <li><span class="ck">✓</span> 1 GB storage</li>
+          <li><span class="ck">✓</span> Community support</li>
+          <li><span class="ck">✓</span> Basic integrations</li>
+        </ul>
+        <a class="btn btn-ghost" href="#">Get started</a>
+      </div>
+
+      <div class="tier featured" id="tier-pro">
+        <div class="badge">Most popular</div>
+        <h3>Pro</h3>
+        <div class="price">$24<small>/user/mo</small></div>
+        <div class="desc">For growing teams that ship every week.</div>
+        <ul>
+          <li><span class="ck">✓</span> Unlimited projects</li>
+          <li><span class="ck">✓</span> 100 GB storage</li>
+          <li><span class="ck">✓</span> Priority support</li>
+          <li><span class="ck">✓</span> Advanced analytics</li>
+          <li><span class="ck">✓</span> SSO &amp; roles</li>
+        </ul>
+        <a class="btn btn-primary" href="#">Start 14-day trial</a>
+      </div>
+
+      <div class="tier" id="tier-enterprise">
+        <h3>Enterprise</h3>
+        <div class="price">Custom</div>
+        <div class="desc">For organizations with security &amp; scale needs.</div>
+        <ul>
+          <li><span class="ck">✓</span> Everything in Pro</li>
+          <li><span class="ck">✓</span> Dedicated success manager</li>
+          <li><span class="ck">✓</span> SOC 2 &amp; audit logs</li>
+          <li><span class="ck">✓</span> 99.99% uptime SLA</li>
+        </ul>
+        <a class="btn btn-ghost" href="#">Contact sales</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="faq" id="faq">
+    <h2>Frequently asked questions</h2>
+    <div class="qa"><h4>Can I change plans later?</h4><p>Yes — upgrade or downgrade anytime. Changes are prorated to the day.</p></div>
+    <div class="qa"><h4>Is there a free trial?</h4><p>Every paid plan starts with a 14-day trial. No credit card required to begin.</p></div>
+    <div class="qa"><h4>What payment methods do you accept?</h4><p>All major credit cards, and invoicing is available on annual Enterprise plans.</p></div>
+    <div class="qa"><h4>Do you offer discounts for nonprofits?</h4><p>We do — reach out to sales and we'll sort you out with a nonprofit rate.</p></div>
+  </section>
+</body>
+</html>

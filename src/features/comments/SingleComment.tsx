@@ -1,5 +1,5 @@
 import { cn } from '@/lib/cn'
-import { ResolveIcon, MoreIcon, VerifiedBadge } from '@/components/icons'
+import { ResolveIcon, TrashIcon, VerifiedBadge } from '@/components/icons'
 import type { Comment } from '@/store/useCommentStore'
 import Avatar from './Avatar'
 import { formatTime } from './format'
@@ -36,7 +36,8 @@ export default function SingleComment({
         }
       }}
       className={cn(
-        'group flex w-full cursor-pointer flex-col gap-2 rounded-xl bg-black/[0.02] p-3 text-left transition',
+        'group flex w-full cursor-pointer flex-col gap-2 rounded-xl bg-neutral-50 p-3 text-left transition',
+        !active && 'hover:bg-neutral-100',
         active && 'bg-brand/10 ring-2 ring-brand',
         comment.resolved && 'opacity-55',
       )}
@@ -75,7 +76,7 @@ export default function SingleComment({
                   onResolve()
                 }}
                 className={cn(
-                  'grid size-6 place-items-center rounded text-ink transition hover:bg-black/5',
+                  'grid size-6 place-items-center rounded text-muted transition hover:bg-emerald-50 hover:text-emerald-600',
                   comment.resolved && 'text-emerald-600',
                 )}
               >
@@ -90,9 +91,9 @@ export default function SingleComment({
                   e.stopPropagation()
                   onDelete()
                 }}
-                className="grid size-6 place-items-center rounded text-ink transition hover:bg-black/5"
+                className="grid size-6 place-items-center rounded text-muted transition hover:bg-red-50 hover:text-red-500"
               >
-                <MoreIcon />
+                <TrashIcon size={15} />
               </button>
             )}
           </div>

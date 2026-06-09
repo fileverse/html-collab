@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Acme — Revenue dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{--ink:#0f172a;--muted:#64748b;--line:#eceef2;--bg:#f6f7f9;--accent:#16a34a;--accent2:#2563eb}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,system-ui,Arial,sans-serif;color:var(--ink);background:var(--bg);display:flex;min-height:100vh;-webkit-font-smoothing:antialiased}
+
+  aside{width:240px;background:#0f172a;color:#cbd5e1;padding:24px 16px;flex-shrink:0}
+  aside .logo{display:flex;align-items:center;gap:10px;color:#fff;font-weight:700;font-size:17px;margin-bottom:28px;padding:0 8px}
+  aside .logo .sq{width:24px;height:24px;border-radius:7px;background:var(--accent2)}
+  aside .group{color:#64748b;font-size:11px;text-transform:uppercase;letter-spacing:.08em;margin:18px 8px 8px}
+  aside a{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:#cbd5e1;font-size:14px;font-weight:500;text-decoration:none;margin-bottom:2px}
+  aside a.active{background:#1e293b;color:#fff}
+
+  main{flex:1;min-width:0}
+  .topbar{display:flex;align-items:center;justify-content:space-between;background:#fff;border-bottom:1px solid var(--line);padding:16px 28px}
+  .topbar h1{font-size:18px;font-weight:700}
+  .topbar .right{display:flex;align-items:center;gap:14px;color:var(--muted);font-size:14px}
+  .avatar{width:32px;height:32px;border-radius:50%;background:#2563eb;color:#fff;display:grid;place-items:center;font-weight:700;font-size:13px}
+
+  .content{padding:28px}
+  .pagehead{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+  .pagehead h2{font-size:24px;font-weight:700}
+  .pagehead .range{background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 14px;font-size:13px;font-weight:600;color:var(--muted)}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:22px}
+  .stat{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px}
+  .stat .k{color:var(--muted);font-size:13px;font-weight:500}
+  .stat .v{font-size:30px;font-weight:700;margin-top:8px;letter-spacing:-.02em}
+  .stat .d{font-size:13px;font-weight:600;margin-top:6px}
+  .up{color:var(--accent)} .down{color:#dc2626}
+
+  .panel{background:#fff;border:1px solid var(--line);border-radius:14px;padding:22px;margin-bottom:22px}
+  .panel h3{font-size:16px;font-weight:700;margin-bottom:18px}
+  .chart{display:flex;align-items:flex-end;gap:14px;height:200px;padding-top:8px}
+  .bar{flex:1;background:linear-gradient(180deg,#3b82f6,#93c5fd);border-radius:8px 8px 0 0;position:relative}
+  .bar span{position:absolute;bottom:-22px;left:0;right:0;text-align:center;font-size:12px;color:var(--muted)}
+
+  table{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  th,td{text-align:left;padding:14px 18px;font-size:14px;border-bottom:1px solid var(--line)}
+  th{background:#fafbfc;color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  tr:last-child td{border-bottom:none}
+  .tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
+  .paid{background:#dcfce7;color:#166534}.due{background:#fef9c3;color:#854d0e}.over{background:#fee2e2;color:#991b1b}
+</style>
+</head>
+<body>
+  <aside>
+    <div class="logo"><span class="sq"></span> Acme</div>
+    <div class="group">Overview</div>
+    <a class="active" href="#">📊 Dashboard</a>
+    <a href="#">💳 Revenue</a>
+    <a href="#">👥 Customers</a>
+    <div class="group">Manage</div>
+    <a href="#">🧾 Invoices</a>
+    <a href="#">📦 Products</a>
+    <a href="#">⚙️ Settings</a>
+  </aside>
+
+  <main>
+    <div class="topbar">
+      <h1>Dashboard</h1>
+      <div class="right"><span>🔔</span><span>Acme Inc.</span><span class="avatar">AC</span></div>
+    </div>
+
+    <div class="content">
+      <div class="pagehead"><h2 id="title">Revenue overview</h2><span class="range">Last 30 days ▾</span></div>
+
+      <div class="stats">
+        <div class="stat"><div class="k">MRR</div><div class="v">$48,200</div><div class="d up">▲ 12.4%</div></div>
+        <div class="stat"><div class="k">Active users</div><div class="v">1,284</div><div class="d up">▲ 4.1%</div></div>
+        <div class="stat"><div class="k">Churn</div><div class="v">2.1%</div><div class="d down">▼ 0.3%</div></div>
+        <div class="stat"><div class="k">Net revenue</div><div class="v">$41,910</div><div class="d up">▲ 9.8%</div></div>
+      </div>
+
+      <div class="panel" id="chart">
+        <h3>Monthly recurring revenue</h3>
+        <div class="chart">
+          <div class="bar" style="height:46%"><span>Jan</span></div>
+          <div class="bar" style="height:58%"><span>Feb</span></div>
+          <div class="bar" style="height:51%"><span>Mar</span></div>
+          <div class="bar" style="height:69%"><span>Apr</span></div>
+          <div class="bar" style="height:74%"><span>May</span></div>
+          <div class="bar" style="height:88%"><span>Jun</span></div>
+          <div class="bar" style="height:100%"><span>Jul</span></div>
+        </div>
+      </div>
+
+      <table id="invoices">
+        <thead><tr><th>Customer</th><th>Plan</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead>
+        <tbody>
+          <tr><td>Globex</td><td>Scale</td><td>$1,200</td><td><span class="tag paid">Paid</span></td><td>Jul 2</td></tr>
+          <tr><td>Initech</td><td>Pro</td><td>$480</td><td><span class="tag due">Due</span></td><td>Jul 4</td></tr>
+          <tr><td>Soylent</td><td>Pro</td><td>$480</td><td><span class="tag paid">Paid</span></td><td>Jul 6</td></tr>
+          <tr><td>Umbrella</td><td>Enterprise</td><td>$4,800</td><td><span class="tag over">Overdue</span></td><td>Jun 28</td></tr>
+          <tr><td>Stark Industries</td><td>Scale</td><td>$1,200</td><td><span class="tag paid">Paid</span></td><td>Jul 8</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The quiet comeback of local-first software</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root{--ink:#1a1a1a;--muted:#6b7280;--line:#e7e7e7;--accent:#b91c1c}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,system-ui,Arial,sans-serif;color:var(--ink);background:#fff;line-height:1.7;-webkit-font-smoothing:antialiased}
+  .bar{height:4px;background:var(--accent)}
+  header.site{max-width:760px;margin:0 auto;padding:24px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}
+  header.site .brand{font-family:Fraunces,Georgia,serif;font-weight:600;font-size:20px}
+  header.site nav{display:flex;gap:22px;color:var(--muted);font-size:14px;font-weight:500}
+  header.site a{color:inherit;text-decoration:none}
+
+  article{max-width:720px;margin:0 auto;padding:56px 24px 80px}
+  .eyebrow{color:var(--accent);font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:.08em}
+  h1{font-family:Fraunces,Georgia,serif;font-size:48px;line-height:1.1;font-weight:600;letter-spacing:-.01em;margin:14px 0 0}
+  .meta{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:14px;margin:24px 0 36px}
+  .meta .av{width:36px;height:36px;border-radius:50%;background:#1a1a1a;color:#fff;display:grid;place-items:center;font-weight:600;font-size:13px}
+  .lede{font-size:21px;line-height:1.6;color:#333;font-weight:500}
+  .cover{width:100%;height:320px;border-radius:14px;margin:32px 0;background:linear-gradient(135deg,#fca5a5,#fecaca 40%,#e0e7ff);display:grid;place-items:center;color:#7f1d1d;font-weight:600}
+  article h2{font-family:Fraunces,Georgia,serif;font-size:30px;font-weight:600;margin:44px 0 14px;letter-spacing:-.01em}
+  article p{font-size:18px;margin:18px 0;color:#222}
+  article ul{margin:18px 0 18px 24px}
+  article li{font-size:18px;margin:8px 0}
+  blockquote{border-left:3px solid var(--accent);margin:32px 0;padding:6px 0 6px 22px;font-family:Fraunces,Georgia,serif;font-size:24px;font-weight:500;font-style:italic;color:#111}
+  .pull{color:var(--muted);font-size:14px;margin-top:6px;font-family:Inter,sans-serif;font-style:normal;font-weight:500}
+  footer{border-top:1px solid var(--line);max-width:720px;margin:0 auto;padding:32px 24px;color:var(--muted);font-size:14px;display:flex;justify-content:space-between}
+</style>
+</head>
+<body>
+  <div class="bar"></div>
+  <header class="site">
+    <div class="brand">The Margin</div>
+    <nav><a href="#">Essays</a><a href="#">Engineering</a><a href="#">About</a><a href="#">Subscribe</a></nav>
+  </header>
+
+  <article>
+    <div class="eyebrow">Software</div>
+    <h1 id="headline">The quiet comeback of local-first software</h1>
+    <div class="meta"><span class="av">AW</span><span>By A. Writer · June 9, 2026 · 6 min read</span></div>
+
+    <p class="lede" id="lede">For a decade the cloud swallowed everything. Now a counter-current is gaining strength: software that works on your device first and syncs second.</p>
+
+    <div class="cover">— cover image —</div>
+
+    <h2 id="why">Why it matters</h2>
+    <p>Local-first apps stay fast and usable offline, keep data under the user's control, and still collaborate when a network is available. For years that combination felt impossible — you picked speed or sync, ownership or collaboration. New tools make you pick less.</p>
+    <ul>
+      <li><strong>Instant interactions</strong> — no round-trip to a server for every keystroke.</li>
+      <li><strong>Ownership</strong> — your data lives with you, not only on someone else's machine.</li>
+      <li><strong>Resilience</strong> — the app keeps working when the network doesn't.</li>
+    </ul>
+
+    <blockquote id="quote">The network is an enhancement, not a dependency.<div class="pull">— the local-first manifesto, paraphrased</div></blockquote>
+
+    <h2 id="tradeoffs">The trade-offs</h2>
+    <p>Conflict resolution and sync are genuinely hard. Two people editing the same paragraph offline will, eventually, disagree. But modern CRDTs have made these conflicts tractable for everyday apps, resolving most of them automatically and surfacing the rest in ways humans can reason about.</p>
+    <p>The cost shows up elsewhere: larger client bundles, trickier debugging, and a smaller ecosystem of libraries. Teams adopting local-first trade operational simplicity on the server for complexity on the client.</p>
+
+    <h2 id="ahead">What's ahead</h2>
+    <p>Expect the boundary to keep blurring. The best products won't advertise "local-first" at all — users will simply notice that things feel instant, keep working on a plane, and never lose a draft. That quiet reliability is the whole point.</p>
+  </article>
+
+  <footer><span>© 2026 The Margin</span><span>Written by humans. Mostly.</span></footer>
+</body>
+</html>

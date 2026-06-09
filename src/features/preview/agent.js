@@ -145,13 +145,35 @@
     })
   }
 
+  // Report the document's natural content width so the host can decide whether
+  // to scale a wide (fixed-layout) page down, or show a responsive one 1:1.
+  function reportSize() {
+    try {
+      var de = document.documentElement
+      var w = Math.max(
+        de ? de.scrollWidth : 0,
+        document.body ? document.body.scrollWidth : 0,
+      )
+      post({ type: 'size', contentWidth: w })
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
   // Re-report a few times after a (re)track so pins settle once late-loading
   // fonts/images finish reflowing the page — not just on the first frame.
   function reportSettling() {
     scheduleReport()
-    setTimeout(scheduleReport, 120)
+    reportSize()
+    setTimeout(function () {
+      scheduleReport()
+      reportSize()
+    }, 120)
     setTimeout(scheduleReport, 400)
-    setTimeout(scheduleReport, 1000)
+    setTimeout(function () {
+      scheduleReport()
+      reportSize()
+    }, 1000)
   }
 
   function setMode(m) {
@@ -204,7 +226,10 @@
   )
 
   window.addEventListener('scroll', scheduleReport, true)
-  window.addEventListener('resize', scheduleReport)
+  window.addEventListener('resize', function () {
+    scheduleReport()
+    reportSize()
+  })
   window.addEventListener('load', reportSettling)
   if (window.ResizeObserver) {
     try {

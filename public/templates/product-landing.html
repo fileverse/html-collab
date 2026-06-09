@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Northwind — Ship faster</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{--ink:#0f172a;--muted:#64748b;--line:#e2e8f0;--accent:#4f46e5;--accent-soft:#eef2ff;--bg:#ffffff}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Inter,system-ui,Arial,sans-serif;color:var(--ink);background:var(--bg);line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 32px}
+  a{color:inherit;text-decoration:none}
+  .btn{display:inline-block;border-radius:10px;padding:12px 20px;font-weight:600;font-size:15px}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-ghost{border:1px solid var(--line);color:var(--ink)}
+
+  nav{display:flex;align-items:center;justify-content:space-between;padding:20px 0;border-bottom:1px solid var(--line)}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;letter-spacing:-.02em}
+  .brand .dot{width:24px;height:24px;border-radius:7px;background:var(--accent)}
+  .nav-links{display:flex;gap:28px;color:var(--muted);font-size:15px;font-weight:500}
+
+  .hero{padding:88px 0 72px;text-align:center}
+  .pill{display:inline-block;background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:13px;padding:6px 14px;border-radius:999px;margin-bottom:24px}
+  .hero h1{font-size:60px;line-height:1.05;font-weight:800;letter-spacing:-.03em;max-width:760px;margin:0 auto}
+  .hero p{margin:22px auto 0;font-size:20px;color:var(--muted);max-width:560px}
+  .hero .cta{margin-top:34px;display:flex;gap:14px;justify-content:center}
+
+  .logos{display:flex;gap:48px;justify-content:center;align-items:center;flex-wrap:wrap;padding:8px 0 72px;color:#94a3b8;font-weight:700;font-size:18px;letter-spacing:.02em}
+
+  section{padding:72px 0}
+  .section-head{text-align:center;max-width:620px;margin:0 auto 48px}
+  .section-head h2{font-size:38px;font-weight:800;letter-spacing:-.02em}
+  .section-head p{margin-top:12px;color:var(--muted);font-size:17px}
+
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  .card{border:1px solid var(--line);border-radius:16px;padding:28px;background:#fff}
+  .card .ic{width:44px;height:44px;border-radius:12px;background:var(--accent-soft);display:grid;place-items:center;margin-bottom:18px;font-size:22px}
+  .card h3{font-size:19px;font-weight:700;margin-bottom:8px}
+  .card p{color:var(--muted);font-size:15px}
+
+  .stats{background:var(--ink);color:#fff;border-radius:24px}
+  .stats .wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;padding:56px 32px;text-align:center}
+  .stats .v{font-size:46px;font-weight:800;letter-spacing:-.02em}
+  .stats .k{color:#94a3b8;margin-top:6px;font-size:15px}
+
+  .quote{max-width:760px;margin:0 auto;text-align:center}
+  .quote p{font-size:26px;font-weight:600;line-height:1.4;letter-spacing:-.01em}
+  .quote .who{margin-top:22px;color:var(--muted);font-size:15px}
+
+  .cta-band{background:var(--accent-soft);border-radius:24px;text-align:center;padding:64px 32px}
+  .cta-band h2{font-size:36px;font-weight:800;letter-spacing:-.02em}
+  .cta-band p{color:var(--muted);margin:12px 0 28px;font-size:17px}
+
+  footer{border-top:1px solid var(--line);margin-top:72px}
+  footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:24px;padding:40px 32px;color:var(--muted);font-size:14px}
+</style>
+</head>
+<body>
+  <header class="wrap">
+    <nav>
+      <div class="brand"><span class="dot"></span> Northwind</div>
+      <div class="nav-links"><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#customers">Customers</a><a href="#docs">Docs</a></div>
+      <a class="btn btn-primary" href="#">Start free</a>
+    </nav>
+  </header>
+
+  <section class="hero wrap" id="hero">
+    <span class="pill">New · Realtime collaboration</span>
+    <h1 id="headline">The fastest way to ship software your team is proud of</h1>
+    <p id="subhead">Plan, build, and launch in one place. Northwind keeps engineering and product moving in the same direction.</p>
+    <div class="cta">
+      <a class="btn btn-primary" href="#">Start free</a>
+      <a class="btn btn-ghost" href="#">Book a demo</a>
+    </div>
+  </section>
+
+  <div class="logos wrap"><span>ACME</span><span>Globex</span><span>Initech</span><span>Soylent</span><span>Umbrella</span></div>
+
+  <section id="features">
+    <div class="wrap">
+      <div class="section-head"><h2>Everything in one workflow</h2><p>Stop stitching tools together. Northwind connects the dots from idea to release.</p></div>
+      <div class="grid">
+        <div class="card"><div class="ic">⚡️</div><h3>Lightning planning</h3><p>Roadmaps, sprints, and issues that stay in sync without the busywork.</p></div>
+        <div class="card"><div class="ic">🔌</div><h3>Connected releases</h3><p>Link pull requests to issues and ship with automated changelogs.</p></div>
+        <div class="card"><div class="ic">📈</div><h3>Insights that matter</h3><p>Velocity, cycle time, and quality metrics — no spreadsheets required.</p></div>
+        <div class="card"><div class="ic">🔒</div><h3>Secure by default</h3><p>SOC 2 Type II, SSO, and granular roles for every team member.</p></div>
+        <div class="card"><div class="ic">🤝</div><h3>Built for teams</h3><p>Comments, mentions, and reviews keep everyone on the same page.</p></div>
+        <div class="card"><div class="ic">🧩</div><h3>Extensible</h3><p>A clean API and 100+ integrations to fit how you already work.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="customers"><div class="stats wrap-outer"><div class="wrap"><div><div class="v">12k+</div><div class="k">Teams shipping daily</div></div><div><div class="v">40%</div><div class="k">Faster cycle time</div></div><div><div class="v">99.99%</div><div class="k">Uptime SLA</div></div></div></div></section>
+
+  <section><div class="wrap"><div class="quote"><p id="quote">"We replaced four tools with Northwind and cut our release cycle in half. It's the first tool the whole team actually enjoys using."</p><div class="who">Jordan Lee · VP Engineering, Globex</div></div></div></section>
+
+  <section id="pricing"><div class="wrap"><div class="cta-band"><h2>Ready to ship faster?</h2><p>Start free for 14 days. No credit card required.</p><a class="btn btn-primary" href="#">Create your workspace</a></div></div></section>
+
+  <footer><div class="wrap"><div class="brand"><span class="dot"></span> Northwind</div><div>© 2026 Northwind, Inc. · Privacy · Terms · Status</div></div></footer>
+</body>
+</html>

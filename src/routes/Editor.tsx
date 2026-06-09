@@ -8,7 +8,7 @@ import { useDocStore } from '@/store/useDocStore'
 import { useShareStore } from '@/store/useShareStore'
 import { downloadFeedbackFile } from '@/features/export/exportDoc'
 import SharePopover from '@/features/share/SharePopover'
-import { SAMPLES } from '@/features/preview/samples'
+import { loadSampleHtml, sampleFileName } from '@/features/preview/samples'
 
 export default function Editor() {
   const html = useDocStore((s) => s.html)
@@ -33,15 +33,22 @@ export default function Editor() {
   const ctrl = share ? remote : local
   const comments = ctrl.comments
 
-  const [drawerOpen, setDrawerOpen] = useState(true)
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [shareOpen, setShareOpen] = useState(false)
 
-  // Dev convenience: /editor?sample=landing loads a sample straight into the store.
+  // Dev convenience: /editor?sample=<id> fetches a sample into the store.
   useEffect(() => {
     if (html || !sampleId) return
-    const sample = SAMPLES.find((s) => s.id === sampleId)
-    if (sample) setDoc(sample.html, `${sample.name}.html`)
+    let cancelled = false
+    loadSampleHtml(sampleId)
+      .then((h) => {
+        if (!cancelled) setDoc(h, sampleFileName(sampleId))
+      })
+      .catch(() => {})
+    return () => {
+      cancelled = true
+    }
   }, [html, sampleId, setDoc])
 
   if (!html) {
@@ -107,15 +114,15 @@ export default function Editor() {
             html={html}
             comments={comments}
             activeId={activeId}
-            mode={drawerOpen ? 'comment' : 'view'}
+            mode="comment"
             onSelect={(id) => {
               setActiveId(id)
-              if (id) setDrawerOpen(true)
+              if (id) setDrawerOpen(true) // open the list when reading an existing pin
             }}
             onCreate={async (draft) => {
+              // commenting works with the sidebar closed — don't force it open
               const c = await ctrl.add(draft)
               if (c) setActiveId(c.id)
-              setDrawerOpen(true)
             }}
           />
           </div>

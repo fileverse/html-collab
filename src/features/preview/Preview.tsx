@@ -31,6 +31,8 @@ export default function Preview({ html, comments, activeId, mode, onSelect, onCr
   const [hover, setHover] = useState<{ rect: Rect; label: string } | null>(null)
   const [rects, setRects] = useState<Record<string, Rect | null>>({})
   const [draft, setDraft] = useState<Draft | null>(null)
+  const [size, setSize] = useState({ w: 0, h: 0 })
+  const [contentWidth, setContentWidth] = useState(0)
 
   const srcDoc = useMemo(() => buildSrcDoc(html), [html])
 
@@ -98,20 +100,45 @@ export default function Preview({ html, comments, activeId, mode, onSelect, onCr
             return next
           })
           break
+        case 'size':
+          setContentWidth(d.contentWidth)
+          break
       }
     }
     window.addEventListener('message', onMessage)
     return () => window.removeEventListener('message', onMessage)
   }, [initIframe])
 
+  // Measure the preview surface so we can fit the (desktop-width) page into it.
+  useEffect(() => {
+    const el = surfaceRef.current
+    if (!el) return
+    const update = () => setSize({ w: el.clientWidth, h: el.clientHeight })
+    update()
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  // Render the doc at a fixed desktop width and scale it to fit the surface, so
+  // wide templates aren't cramped/clipped. Coordinates from the (1280-wide)
+  // iframe are multiplied by `scale` to place pins/composer on the overlay.
+  // Adaptive fit: render responsive pages at the surface width (1:1), but scale
+  // wide fixed-layout docs (e.g. 1920-wide slide decks) down so they aren't
+  // cramped. `contentWidth` is the doc's natural width, measured inside the
+  // iframe; if it overflows the surface we treat that as the design width.
+  const measured = size.w > 0 && size.h > 0
+  const logicalWidth = measured && contentWidth > size.w + 8 ? contentWidth : size.w || 1280
+  const scale = measured ? size.w / logicalWidth : 1
+
   function pinPoint(rect: Rect, offset: { x: number; y: number }) {
-    return { left: rect.x + rect.w * offset.x, top: rect.y + rect.h * offset.y }
+    return { left: (rect.x + rect.w * offset.x) * scale, top: (rect.y + rect.h * offset.y) * scale }
   }
 
-  // Composer sits beside the draft pin, clamped to the preview surface.
+  // Composer sits beside the (already-scaled) draft pin, clamped to the surface.
   function composerPos(p: { left: number; top: number }) {
-    const w = surfaceRef.current?.clientWidth ?? 800
-    const h = surfaceRef.current?.clientHeight ?? 600
+    const w = size.w || 800
+    const h = size.h || 600
     const left = p.left + 300 > w ? p.left - 300 : p.left + 12
     return {
       left: Math.max(8, Math.min(left, w - 296)),
@@ -127,7 +154,17 @@ export default function Preview({ html, comments, activeId, mode, onSelect, onCr
         srcDoc={srcDoc}
         onLoad={initIframe}
         sandbox="allow-scripts allow-popups allow-forms allow-modals"
-        className="absolute inset-0 h-full w-full border-0 bg-white"
+        className="absolute left-0 top-0 border-0 bg-white"
+        style={
+          measured
+            ? {
+                width: logicalWidth,
+                height: size.h / scale,
+                transform: `scale(${scale})`,
+                transformOrigin: '0 0',
+              }
+            : { width: '100%', height: '100%' }
+        }
       />
 
       {/* overlay — transparent to pointer events so the iframe receives them;
@@ -135,8 +172,13 @@ export default function Preview({ html, comments, activeId, mode, onSelect, onCr
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {mode === 'comment' && hover && !draft && (
           <div
-            className="absolute rounded-sm bg-brand/15 ring-2 ring-brand"
-            style={{ left: hover.rect.x, top: hover.rect.y, width: hover.rect.w, height: hover.rect.h }}
+            className="absolute rounded-[4px] bg-brand/[0.08] ring-2 ring-brand/60"
+            style={{
+              left: hover.rect.x * scale,
+              top: hover.rect.y * scale,
+              width: hover.rect.w * scale,
+              height: hover.rect.h * scale,
+            }}
           />
         )}
 

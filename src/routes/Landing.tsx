@@ -7,7 +7,7 @@ import { HelpIcon } from '@/components/icons'
 import { useDocStore } from '@/store/useDocStore'
 import { HTML_ACCEPT, isHtmlFile, readFileAsText } from '@/features/import/readHtmlFile'
 import ImportingState from '@/features/import/ImportingState'
-import { SAMPLES } from '@/features/preview/samples'
+import { SAMPLES, loadSampleHtml, sampleFileName } from '@/features/preview/samples'
 
 const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 
@@ -51,11 +51,20 @@ export default function Landing() {
     if (file) void importFile(file)
   }
 
-  function loadSample(id: string) {
+  async function loadSample(id: string) {
     const sample = SAMPLES.find((s) => s.id === id)
     if (!sample) return
-    setDoc(sample.html, `${sample.name}.html`)
-    navigate('/editor')
+    setError(null)
+    setPendingName(sample.name)
+    setImporting(true)
+    try {
+      const [html] = await Promise.all([loadSampleHtml(id), delay(400)])
+      setDoc(html, sampleFileName(id))
+      navigate('/editor')
+    } catch {
+      setImporting(false)
+      setError('Could not load that sample. Please try again.')
+    }
   }
 
   if (importing) return <ImportingState fileName={pendingName ?? undefined} />
@@ -132,7 +141,7 @@ export default function Landing() {
             <button
               key={s.id}
               type="button"
-              onClick={() => loadSample(s.id)}
+              onClick={() => void loadSample(s.id)}
               className="rounded-full border border-neutral-200 px-2.5 py-1 font-medium text-neutral-600 transition hover:bg-neutral-50"
             >
               {s.name}
