@@ -64,8 +64,23 @@ VITE_SUPABASE_ANON_KEY=sb_publishable_…   # the "publishable" key (new format)
 
 The shared‑link schema lives in [`supabase/migrations/`](supabase/migrations/).
 Apply it once per project — easiest via the Supabase **SQL Editor**: paste and
-run `0001_init.sql`, then `0002_fix_pgcrypto_schema.sql`. (Or run them with
-`psql "$DATABASE_URL" -f <file>` if you have the connection string.)
+run them in order (`0001_init.sql` → `0002_fix_pgcrypto_schema.sql` →
+`0003_sync.sql`). (Or run them with `psql "$DATABASE_URL" -f <file>` if you have
+the connection string.)
+
+### Deploy (Vercel)
+
+It's a static Vite SPA, so deployment is just the build output:
+
+1. Import the repo into Vercel (framework preset: **Vite**, build `npm run build`,
+   output `dist`).
+2. Add the same env vars under **Settings → Environment Variables** — without
+   them, Share/Review won't work in production:
+   - `VITE_SUPABASE_URL`
+   - `VITE_SUPABASE_ANON_KEY`
+3. [`vercel.json`](vercel.json) rewrites all non‑file routes to `index.html` so
+   client routes (`/editor`, `/r/:id`) don't 404 on refresh. Static assets are
+   served from the filesystem first, so they're unaffected.
 
 ---
 
