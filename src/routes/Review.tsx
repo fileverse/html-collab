@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
-import { DownloadIcon, Logo } from '@/components/icons'
+import { CommentIcon, DownloadIcon, Logo } from '@/components/icons'
+import { cn } from '@/lib/cn'
 import Preview from '@/features/preview/Preview'
 import CommentDrawer from '@/features/comments/CommentDrawer'
 import { useRemoteComments } from '@/features/comments/controllers'
@@ -18,6 +19,7 @@ export default function Review() {
   const [gateError, setGateError] = useState<string | null>(null)
   const [html, setHtml] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [drawerOpen, setDrawerOpen] = useState(true)
 
   // Comments come from the shared source of truth once unlocked (add-only).
   const ctrl = useRemoteComments(phase === 'ready' ? (shareId ?? null) : null, password, {
@@ -134,8 +136,29 @@ export default function Review() {
           </label>
           <button
             type="button"
+            title="Comments"
+            onClick={() => setDrawerOpen((o) => !o)}
+            className={cn(
+              'relative grid size-9 place-items-center rounded-full shadow-[0px_4px_8px_0px_rgba(0,0,0,0.15)] transition',
+              drawerOpen ? 'bg-ink text-white' : 'bg-white text-ink hover:bg-neutral-50',
+            )}
+          >
+            <CommentIcon />
+            {ctrl.comments.length > 0 && (
+              <span
+                className={cn(
+                  'absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold ring-2 ring-white',
+                  drawerOpen ? 'bg-brand text-ink' : 'bg-ink text-white',
+                )}
+              >
+                {ctrl.comments.length}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
             onClick={() => html && downloadFeedbackFile(html, fileName, ctrl.comments)}
-            className="flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 shadow-sm transition hover:bg-neutral-50"
+            className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-medium text-ink shadow-[0px_4px_8px_0px_rgba(0,0,0,0.15)] transition hover:bg-neutral-50"
           >
             <DownloadIcon size={16} />
             Download
@@ -153,7 +176,10 @@ export default function Review() {
               comments={ctrl.comments}
               activeId={activeId}
               mode="comment"
-              onSelect={setActiveId}
+              onSelect={(id) => {
+                setActiveId(id)
+                if (id) setDrawerOpen(true)
+              }}
               onCreate={async (draft) => {
                 const c = await ctrl.add(draft)
                 if (c) setActiveId(c.id)
@@ -161,9 +187,16 @@ export default function Review() {
             />
           )}
           </div>
-          <div className="h-full shrink-0">
-            <CommentDrawer comments={ctrl.comments} activeId={activeId} onSelect={setActiveId} />
-          </div>
+          {drawerOpen && (
+            <div className="h-full shrink-0">
+              <CommentDrawer
+                comments={ctrl.comments}
+                activeId={activeId}
+                onSelect={setActiveId}
+                onClose={() => setDrawerOpen(false)}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
