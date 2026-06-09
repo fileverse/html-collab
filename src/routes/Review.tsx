@@ -13,6 +13,7 @@ export default function Review() {
   const { shareId } = useParams<{ shareId: string }>()
   const [phase, setPhase] = useState<Phase>('loading')
   const [fileName, setFileName] = useState('')
+  const [name, setName] = useState('')
   const [password, setPassword] = useState('')
   const [gateError, setGateError] = useState<string | null>(null)
   const [html, setHtml] = useState<string | null>(null)
@@ -21,7 +22,7 @@ export default function Review() {
   // Comments come from the shared source of truth once unlocked (add-only).
   const ctrl = useRemoteComments(phase === 'ready' ? (shareId ?? null) : null, password, {
     owner: false,
-    author: 'Guest',
+    author: name.trim() || 'Guest',
   })
 
   useEffect(() => {
@@ -83,12 +84,18 @@ export default function Review() {
           <h1 className="mt-5 text-xl font-medium text-ink">Password required</h1>
           <p className="mt-1.5 text-sm text-muted">You need a password to access this file</p>
           <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+            className="mt-5 w-full rounded-lg border border-line p-3 text-sm text-ink outline-none placeholder:text-muted focus:border-ink/30"
+          />
+          <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter password"
             autoFocus
-            className="mt-5 w-full rounded-lg border border-line p-3 text-sm text-ink outline-none placeholder:text-muted focus:border-ink/30"
+            className="mt-2 w-full rounded-lg border border-line p-3 text-sm text-ink outline-none placeholder:text-muted focus:border-ink/30"
           />
           {gateError && <p className="mt-2 w-full text-left text-xs text-red-500">{gateError}</p>}
           <button
@@ -116,9 +123,15 @@ export default function Review() {
           </span>
         </div>
         <div className="pointer-events-auto flex items-center gap-3">
-          <span className="text-xs text-muted">
-            Commenting as <span className="font-medium text-ink">Guest</span>
-          </span>
+          <label className="flex items-center gap-1.5 text-xs text-muted">
+            Commenting as
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Guest"
+              className="w-28 rounded-md border border-line bg-white px-2 py-1 text-xs font-medium text-ink outline-none placeholder:text-muted focus:border-ink/30"
+            />
+          </label>
           <button
             type="button"
             onClick={() => html && downloadFeedbackFile(html, fileName, ctrl.comments)}
