@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import TopBar from '@/components/TopBar'
-import { TrashFillIcon, UploadIcon } from '@/components/icons'
+import HelpFab from '@/components/HelpFab'
+import { CopyIcon, ResolveIcon, TrashFillIcon, UploadIcon } from '@/components/icons'
 import Preview from '@/features/preview/Preview'
 import CommentDrawer from '@/features/comments/CommentDrawer'
 import VersionRail from '@/features/versions/VersionRail'
@@ -16,6 +17,7 @@ import SharePopover, { ConfirmDialog } from '@/features/share/SharePopover'
 import {
   addVersion,
   createShare,
+  deleteShare,
   deleteVersion,
   fetchShare,
   fetchShareMeta,
@@ -71,7 +73,8 @@ export default function Editor() {
   // Figma: the share card is open by default right after import.
   const [shareOpen, setShareOpen] = useState(true)
   const [copied, setCopied] = useState(false)
-  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false) // delete the active version
+  const [confirmFile, setConfirmFile] = useState(false) // delete the whole file
   const [deleting, setDeleting] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [switching, setSwitching] = useState(false)
@@ -242,6 +245,22 @@ export default function Editor() {
     }
   }
 
+  // Top-right red trash: delete the whole file (every version) and start over.
+  async function deleteWholeFile() {
+    setDeleting(true)
+    try {
+      if (share?.ownerToken) await deleteShare(share.shareId, share.ownerToken)
+    } catch {
+      /* link may already be gone — still clear locally */
+    }
+    clearShare(docId)
+    clearDocComments(docId)
+    resetDoc()
+    setDeleting(false)
+    setConfirmFile(false)
+    navigate('/')
+  }
+
   if (!html) {
     if (sampleId) return null // sample loads on the next tick
     return <Navigate to="/" replace />
@@ -300,7 +319,7 @@ export default function Editor() {
           <span className="rounded-md border border-neutral-200 bg-white px-2.5 py-1 text-xs font-medium text-neutral-700">
             {docId}
           </span>
-          {/* Figma title pill: vN · DD.MM.YYYY · N comments · delete */}
+          {/* Figma title pill: vN · DD.MM.YYYY · N comments (· delete version) */}
           <span className="flex items-center gap-2 rounded-full bg-line px-3 py-1">
             <span className="text-xs font-medium leading-4 text-ink">v{activeVersion}</span>
             <span className="text-xs leading-4 text-muted">
@@ -309,16 +328,16 @@ export default function Editor() {
             <span className="text-xs leading-4 text-muted">
               {comments.length} comment{comments.length === 1 ? '' : 's'}
             </span>
-            <button
-              type="button"
-              title={
-                lastVersion ? 'Delete this file and its share link' : `Delete version v${activeVersion}`
-              }
-              onClick={() => setConfirmDelete(true)}
-              className="grid size-6 place-items-center rounded text-[#FB3449] transition hover:bg-red-50"
-            >
-              <TrashFillIcon size={14} />
-            </button>
+            {!lastVersion && (
+              <button
+                type="button"
+                title={`Delete version v${activeVersion}`}
+                onClick={() => setConfirmDelete(true)}
+                className="grid size-6 place-items-center rounded text-[#FB3449] transition hover:bg-red-50"
+              >
+                <TrashFillIcon size={14} />
+              </button>
+            )}
           </span>
           {ctrl.isRemote && (
             <button
@@ -332,7 +351,8 @@ export default function Editor() {
             </button>
           )}
           {hint && <span className="text-xs font-medium text-amber-600">{hint}</span>}
-          {comments.length > 0 && (
+          {/* Editor actions (Figma): copy the re-prompt + delete the whole file */}
+          <div className="ml-auto flex items-center gap-1.5">
             <button
               type="button"
               title="Copy the feedback as a re-prompt for your AI agent"
@@ -342,11 +362,19 @@ export default function Editor() {
                   setTimeout(() => setCopied(false), 1500)
                 }
               }}
-              className="ml-auto rounded-md border border-neutral-200 bg-white px-2.5 py-1 text-xs font-medium text-neutral-700 transition hover:bg-neutral-50"
+              className="grid size-9 place-items-center rounded-lg border border-line bg-white text-ink shadow-sm transition hover:bg-neutral-50"
             >
-              {copied ? 'Copied!' : 'Copy re-prompt'}
+              {copied ? <ResolveIcon size={16} /> : <CopyIcon size={16} />}
             </button>
-          )}
+            <button
+              type="button"
+              title="Delete this HTML and start a new session"
+              onClick={() => setConfirmFile(true)}
+              className="grid size-9 place-items-center rounded-lg border border-line bg-white text-[#FB3449] shadow-sm transition hover:bg-red-50"
+            >
+              <TrashFillIcon size={16} />
+            </button>
+          </div>
         </div>
         <div className="flex flex-1 gap-3 overflow-hidden">
           <div className="relative min-w-0 flex-1 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
@@ -417,17 +445,25 @@ export default function Editor() {
 
       {confirmDelete && (
         <ConfirmDialog
-          title={lastVersion ? 'Delete this file' : `Delete version v${activeVersion}`}
-          body={
-            lastVersion
-              ? 'You are about to delete the imported file, its share link, and all comments. Reviewers with the link will lose access. This cannot be undone.'
-              : `You are about to delete version v${activeVersion} and all of its comments. Other versions are kept. This cannot be undone.`
-          }
+          title={`Delete version v${activeVersion}`}
+          body={`You are about to delete version v${activeVersion} and all of its comments. Other versions are kept. This cannot be undone.`}
           confirmLabel={deleting ? 'Deleting…' : 'Yes, delete'}
           onCancel={() => setConfirmDelete(false)}
           onConfirm={() => void deleteActiveVersion()}
         />
       )}
+
+      {confirmFile && (
+        <ConfirmDialog
+          title="Delete this HTML"
+          body="You are about to delete this file — every version, its share link, and all comments — and start a new session. Reviewers with the link will lose access. This cannot be undone."
+          confirmLabel={deleting ? 'Deleting…' : 'Yes, delete'}
+          onCancel={() => setConfirmFile(false)}
+          onConfirm={() => void deleteWholeFile()}
+        />
+      )}
+
+      <HelpFab />
     </div>
   )
 }

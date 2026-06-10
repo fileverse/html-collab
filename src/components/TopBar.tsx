@@ -1,6 +1,17 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
-import { Logo, UploadIcon, CommentIcon, ShareIcon, DownloadIcon, LoginIcon } from './icons'
+import {
+  Logo,
+  UploadIcon,
+  CommentIcon,
+  ShareIcon,
+  DownloadIcon,
+  LoginIcon,
+  GitHubIcon,
+  ExternalLinkIcon,
+} from './icons'
+
+const REPO_URL = 'https://github.com/fileverse/ai-feedback-loop'
 
 const FLOAT_SHADOW = 'shadow-[0px_4px_8px_0px_rgba(0,0,0,0.15)]'
 
@@ -23,6 +34,10 @@ type TopBarProps = {
   onLogin?: () => void
   /** Click the logo (e.g. start a new project / go home). */
   onLogoClick?: () => void
+  /** Show the "Open source" GitHub pill at the start of the actions (Figma landing). */
+  showOpenSource?: boolean
+  /** Show the login (→) button. Hidden on the landing per Figma. */
+  showLogin?: boolean
 }
 
 export default function TopBar({
@@ -37,6 +52,8 @@ export default function TopBar({
   downloadDisabled = false,
   onLogin,
   onLogoClick,
+  showOpenSource = false,
+  showLogin = true,
 }: TopBarProps) {
   return (
     <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between p-6">
@@ -51,9 +68,33 @@ export default function TopBar({
       </div>
 
       <div className="pointer-events-auto flex items-center gap-2">
-        <FloatBtn title="Upload" onClick={onUpload}>
-          <UploadIcon />
-        </FloatBtn>
+        {showOpenSource && (
+          <>
+            <a
+              href={REPO_URL}
+              target="_blank"
+              rel="noreferrer"
+              title="Open source on GitHub"
+              className={cn(
+                'flex h-9 items-center gap-2 rounded-full bg-white px-3 text-sm font-medium text-ink transition hover:bg-neutral-50',
+                FLOAT_SHADOW,
+              )}
+            >
+              <GitHubIcon size={16} />
+              Open source
+              <span className="text-muted">
+                <ExternalLinkIcon size={13} />
+              </span>
+            </a>
+            <span className="mx-1 h-5 w-px bg-line" />
+          </>
+        )}
+
+        {onUpload && (
+          <FloatBtn title="Upload" onClick={onUpload}>
+            <UploadIcon />
+          </FloatBtn>
+        )}
 
         <FloatBtn
           title="Comments"
@@ -84,9 +125,11 @@ export default function TopBar({
           Download
         </Pill>
 
-        <FloatBtn title="Log in" onClick={onLogin}>
-          <LoginIcon />
-        </FloatBtn>
+        {showLogin && (
+          <FloatBtn title="Log in" onClick={onLogin}>
+            <LoginIcon />
+          </FloatBtn>
+        )}
       </div>
     </header>
   )

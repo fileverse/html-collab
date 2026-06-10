@@ -2,10 +2,10 @@ import type { ChangeEvent, DragEvent } from 'react'
 import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import TopBar from '@/components/TopBar'
+import HelpFab from '@/components/HelpFab'
 import { useDocStore } from '@/store/useDocStore'
 import { HTML_ACCEPT, isHtmlFile, readFileAsText } from '@/features/import/readHtmlFile'
 import ImportingState from '@/features/import/ImportingState'
-import { SAMPLES, loadSampleHtml, sampleFileName } from '@/features/preview/samples'
 
 const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 
@@ -70,22 +70,6 @@ export default function Landing() {
     if (file) void importFile(file)
   }
 
-  async function loadSample(id: string) {
-    const sample = SAMPLES.find((s) => s.id === id)
-    if (!sample) return
-    setError(null)
-    setPendingName(sample.name)
-    setImporting(true)
-    try {
-      const [html] = await Promise.all([loadSampleHtml(id), delay(400)])
-      setDoc(html, sampleFileName(id))
-      navigate('/editor')
-    } catch {
-      setImporting(false)
-      setError('Could not load that sample. Please try again.')
-    }
-  }
-
   if (importing) return <ImportingState fileName={pendingName ?? undefined} />
 
   const base = import.meta.env.BASE_URL
@@ -102,7 +86,7 @@ export default function Landing() {
       }}
       onDrop={onDrop}
     >
-      <TopBar onUpload={() => inputRef.current?.click()} shareDisabled downloadDisabled />
+      <TopBar shareDisabled downloadDisabled showOpenSource showLogin={false} />
       <input ref={inputRef} type="file" accept={HTML_ACCEPT} className="hidden" onChange={onInputChange} />
 
       {/* note — visible only in this empty state (Figma) */}
@@ -157,23 +141,10 @@ export default function Landing() {
           </button>
           <p className="text-sm leading-5 text-muted">Or drag &amp; drop the file on the screen</p>
           {error && <p className="text-sm text-red-500">{error}</p>}
-          <div className="mt-1 flex flex-wrap items-center justify-center gap-2 text-xs text-disabled">
-            <span>Or try a sample:</span>
-            {SAMPLES.map((s) => (
-              <button
-                key={s.id}
-                type="button"
-                onClick={() => void loadSample(s.id)}
-                className="rounded-full border border-line px-2.5 py-1 font-medium text-muted transition hover:bg-surface"
-              >
-                {s.name}
-              </button>
-            ))}
-          </div>
         </div>
       </main>
 
-      <p className="absolute bottom-6 left-6 text-xs leading-4 text-muted">Open source</p>
+      <HelpFab />
 
       {dragging && (
         <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center bg-white/80 backdrop-blur-sm">
