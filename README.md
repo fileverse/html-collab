@@ -125,6 +125,8 @@ Deleting a version renumbers the rest; deleting the last one tears down the
 whole share. Schema: a `versions` table, with `comments` referencing
 `version_id`; `get_share(…, version_no)`, `add_version`, `delete_version`.
 
+![Switching between versions, each its own review round](docs/versions.png)
+
 ### Sharing & security (password + owner token)
 
 - Tables `shares`, `versions`, `comments` have **RLS enabled with no policies**,
