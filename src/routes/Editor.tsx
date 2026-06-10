@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import TopBar from '@/components/TopBar'
-import { TrashFillIcon } from '@/components/icons'
+import { TrashFillIcon, UploadIcon } from '@/components/icons'
 import Preview from '@/features/preview/Preview'
 import CommentDrawer from '@/features/comments/CommentDrawer'
 import VersionRail from '@/features/versions/VersionRail'
@@ -143,12 +143,9 @@ export default function Editor() {
     }
   }
 
-  // Upload icon → import the next version (Figma: "Select file → upload").
-  function onUploadClick() {
-    if (!share) {
-      navigate('/') // not shared yet (offline) — start fresh
-      return
-    }
+  // "Import new version of this file" (Figma in-canvas button) → file picker.
+  function importNewVersion() {
+    if (!share) return
     if (versions.length >= MAX_VERSIONS) {
       flashHint(`Max ${MAX_VERSIONS} versions — delete one to add another.`)
       return
@@ -253,8 +250,14 @@ export default function Editor() {
         onDownload={() => downloadFeedbackFile(html, docId, comments)}
         onShare={() => setShareOpen((o) => !o)}
         shareOpen={shareOpen}
-        onUpload={onUploadClick}
+        onUpload={() => navigate('/')}
         onLogoClick={() => navigate('/')}
+      />
+      {/* Version switcher lives in the left page margin, outside the canvas (Figma) */}
+      <VersionRail
+        versions={versions.map((v) => v.no)}
+        active={activeVersion}
+        onSelect={(no) => void switchVersion(no)}
       />
       <input
         ref={versionInputRef}
@@ -335,11 +338,6 @@ export default function Editor() {
         </div>
         <div className="flex flex-1 gap-3 overflow-hidden">
           <div className="relative min-w-0 flex-1 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <VersionRail
-              versions={versions.map((v) => v.no)}
-              active={activeVersion}
-              onSelect={(no) => void switchVersion(no)}
-            />
             <Preview
               key={`${docId}:v${activeVersion}`}
               html={html}
@@ -361,6 +359,22 @@ export default function Editor() {
                 if (c) setActiveId(c.id)
               }}
             />
+            {/* Figma: in-canvas button to import the next version */}
+            {share && isLatest && !shareOpen && (
+              <button
+                type="button"
+                onClick={importNewVersion}
+                title={
+                  versions.length >= MAX_VERSIONS
+                    ? `Max ${MAX_VERSIONS} versions — delete one to add another`
+                    : 'Import a revised version of this file'
+                }
+                className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded-full border border-line bg-white px-4 py-2 text-sm font-medium text-ink shadow-[0px_4px_12px_0px_rgba(0,0,0,0.15)] transition hover:bg-neutral-50"
+              >
+                <UploadIcon size={16} />
+                Import new version of this file
+              </button>
+            )}
             {!isLatest && (
               <div className="pointer-events-none absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-full bg-ink/85 px-3 py-1.5 text-xs font-medium text-white shadow-lg">
                 Viewing v{activeVersion} (read-only) · comment on v{latestVersion}

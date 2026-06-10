@@ -188,14 +188,16 @@ export default function Review() {
         </div>
       </header>
 
+      {/* Version switcher lives in the left page margin, outside the canvas (Figma) */}
+      <VersionRail
+        versions={versions.map((v) => v.version_no)}
+        active={activeVersion}
+        onSelect={(no) => void switchVersion(no)}
+      />
+
       <div className="mx-auto flex h-screen max-w-7xl flex-col px-6 pb-6 pt-[72px]">
         <div className="flex flex-1 gap-3 overflow-hidden">
           <div className="relative min-w-0 flex-1 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-            <VersionRail
-              versions={versions.map((v) => v.version_no)}
-              active={activeVersion}
-              onSelect={(no) => void switchVersion(no)}
-            />
             {html && (
               <Preview
                 key={`${shareId}:v${activeVersion}`}
