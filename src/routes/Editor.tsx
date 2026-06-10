@@ -4,15 +4,26 @@ import TopBar from '@/components/TopBar'
 import { TrashFillIcon } from '@/components/icons'
 import Preview from '@/features/preview/Preview'
 import CommentDrawer from '@/features/comments/CommentDrawer'
+import VersionRail from '@/features/versions/VersionRail'
+import ImportingState from '@/features/import/ImportingState'
+import { HTML_ACCEPT, isHtmlFile, readFileAsText } from '@/features/import/readHtmlFile'
 import { useLocalComments, useRemoteComments } from '@/features/comments/controllers'
 import { useCommentStore } from '@/store/useCommentStore'
 import { useDocStore } from '@/store/useDocStore'
-import { useShareStore } from '@/store/useShareStore'
+import { useShareStore, type VersionMeta } from '@/store/useShareStore'
 import { copyReprompt, downloadFeedbackFile } from '@/features/export/exportDoc'
 import SharePopover, { ConfirmDialog } from '@/features/share/SharePopover'
-import { createShare, deleteShare, setSharePassword } from '@/features/share/api'
+import {
+  addVersion,
+  createShare,
+  deleteVersion,
+  fetchShare,
+  setSharePassword,
+} from '@/features/share/api'
 import { isSupabaseConfigured } from '@/lib/supabase'
 import { loadSampleHtml, sampleFileName } from '@/features/preview/samples'
+
+const MAX_VERSIONS = 3
 
 /** DD.MM.YYYY (Figma title pill). */
 function formatDate(ts: number): string {
@@ -25,6 +36,7 @@ export default function Editor() {
   const html = useDocStore((s) => s.html)
   const fileName = useDocStore((s) => s.fileName)
   const setDoc = useDocStore((s) => s.setDoc)
+  const setHtml = useDocStore((s) => s.setHtml)
   const resetDoc = useDocStore((s) => s.reset)
   const clearDocComments = useCommentStore((s) => s.clearDoc)
   const [params] = useSearchParams()
@@ -38,9 +50,15 @@ export default function Editor() {
   // the remote one is inert until there's a shareId.
   const share = useShareStore((s) => s.byDoc[docId])
   const setShare = useShareStore((s) => s.setShare)
+  const patchShare = useShareStore((s) => s.patchShare)
   const clearShare = useShareStore((s) => s.clearShare)
+
+  const activeVersion = share?.activeVersion ?? 1
+  const versions = share?.versions ?? []
+  const latestVersion = versions.reduce((m, v) => Math.max(m, v.no), activeVersion)
+
   const local = useLocalComments(docId)
-  const remote = useRemoteComments(share?.shareId ?? null, share?.password ?? '', {
+  const remote = useRemoteComments(share?.shareId ?? null, share?.password ?? '', activeVersion, {
     owner: true,
     author: 'You',
   })
@@ -54,6 +72,15 @@ export default function Editor() {
   const [copied, setCopied] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [switching, setSwitching] = useState(false)
+  const [hint, setHint] = useState<string | null>(null)
+  const versionInputRef = useRef<HTMLInputElement>(null)
+
+  function flashHint(msg: string) {
+    setHint(msg)
+    setTimeout(() => setHint((h) => (h === msg ? null : h)), 2600)
+  }
 
   // Dev convenience: /editor?sample=<id> fetches a sample into the store.
   useEffect(() => {
@@ -70,8 +97,8 @@ export default function Editor() {
   }, [html, sampleId, setDoc])
 
   // Figma: the share link exists as soon as a file is imported. Auto-create a
-  // (password-less) share for any doc that doesn't have one yet, migrating any
-  // local comments into it so nothing is lost.
+  // (password-less) share + version 1 for any doc that doesn't have one yet,
+  // migrating any local comments into it so nothing is lost.
   const creatingRef = useRef(false)
   useEffect(() => {
     if (!html || share || !isSupabaseConfigured || creatingRef.current) return
@@ -85,11 +112,19 @@ export default function Editor() {
     }))
     createShare({ fileName: docId, html, password: '', comments: localComments })
       .then(({ id, ownerToken }) => {
-        setShare(docId, { shareId: id, password: '', ownerToken, createdAt: Date.now() })
+        const now = Date.now()
+        setShare(docId, {
+          shareId: id,
+          password: '',
+          ownerToken,
+          createdAt: now,
+          versions: [{ no: 1, fileName: docId, createdAt: now }],
+          activeVersion: 1,
+        })
         if (localComments.length > 0) clearDocComments(docId) // migrated to the share
       })
       .catch(() => {
-        /* offline / misconfigured — local-only mode still works */
+        /* offline / misconfigured — local-only mode still works (no versioning) */
       })
       .finally(() => {
         creatingRef.current = false
@@ -101,31 +136,113 @@ export default function Editor() {
     if (!share?.ownerToken) return false
     try {
       await setSharePassword(share.shareId, share.ownerToken, newPassword)
-      setShare(docId, { ...share, password: newPassword })
+      patchShare(docId, { password: newPassword })
       return true
     } catch {
       return false
     }
   }
 
-  async function deleteFile() {
+  // Upload icon → import the next version (Figma: "Select file → upload").
+  function onUploadClick() {
+    if (!share) {
+      navigate('/') // not shared yet (offline) — start fresh
+      return
+    }
+    if (versions.length >= MAX_VERSIONS) {
+      flashHint(`Max ${MAX_VERSIONS} versions — delete one to add another.`)
+      return
+    }
+    versionInputRef.current?.click()
+  }
+
+  async function onVersionFile(file: File) {
+    if (!share) return
+    if (!isHtmlFile(file)) {
+      flashHint('Please choose an .html file.')
+      return
+    }
+    setUploading(true)
+    try {
+      const nextHtml = await readFileAsText(file)
+      const no = await addVersion({
+        shareId: share.shareId,
+        ownerToken: share.ownerToken,
+        fileName: file.name,
+        html: nextHtml,
+      })
+      const v: VersionMeta = { no, fileName: file.name, createdAt: Date.now() }
+      patchShare(docId, { versions: [...versions, v], activeVersion: no })
+      setHtml(nextHtml) // project name stays stable; show the new version
+      setActiveId(null)
+      setShareOpen(false)
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : ''
+      flashHint(
+        msg.includes('max_versions') ? `Max ${MAX_VERSIONS} versions reached.` : 'Upload failed.',
+      )
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  async function switchVersion(no: number) {
+    if (!share || no === activeVersion || switching) return
+    setSwitching(true)
+    setActiveId(null)
+    try {
+      const d = await fetchShare(share.shareId, share.password, no)
+      setHtml(d.html)
+      patchShare(docId, { activeVersion: no })
+    } catch {
+      flashHint('Could not load that version.')
+    } finally {
+      setSwitching(false)
+    }
+  }
+
+  async function deleteActiveVersion() {
+    if (!share) return
     setDeleting(true)
     try {
-      if (share?.ownerToken) await deleteShare(share.shareId, share.ownerToken)
+      const { shareDeleted } = await deleteVersion(share.shareId, share.ownerToken, activeVersion)
+      if (shareDeleted) {
+        clearShare(docId)
+        clearDocComments(docId)
+        resetDoc()
+        navigate('/')
+        return
+      }
+      // versions were renumbered server-side — refetch the new latest + list
+      const d = await fetchShare(share.shareId, share.password)
+      patchShare(docId, {
+        versions: d.versions.map((x) => ({
+          no: x.version_no,
+          fileName: x.file_name,
+          createdAt: Date.parse(x.created_at) || Date.now(),
+        })),
+        activeVersion: d.version_no,
+      })
+      setHtml(d.html)
+      setActiveId(null)
     } catch {
-      /* link may already be gone — still clear locally */
+      flashHint('Could not delete that version.')
+    } finally {
+      setDeleting(false)
+      setConfirmDelete(false)
     }
-    clearShare(docId)
-    clearDocComments(docId)
-    resetDoc()
-    setDeleting(false)
-    navigate('/')
   }
 
   if (!html) {
     if (sampleId) return null // sample loads on the next tick
     return <Navigate to="/" replace />
   }
+
+  if (uploading) return <ImportingState label="Uploading updated version" />
+
+  const activeMeta = versions.find((v) => v.no === activeVersion)
+  const isLatest = activeVersion === latestVersion
+  const lastVersion = versions.length <= 1
 
   return (
     <div className="relative min-h-screen bg-dotgrid">
@@ -136,18 +253,30 @@ export default function Editor() {
         onDownload={() => downloadFeedbackFile(html, docId, comments)}
         onShare={() => setShareOpen((o) => !o)}
         shareOpen={shareOpen}
-        onUpload={() => navigate('/')}
+        onUpload={onUploadClick}
+        onLogoClick={() => navigate('/')}
+      />
+      <input
+        ref={versionInputRef}
+        type="file"
+        accept={HTML_ACCEPT}
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0]
+          if (f) void onVersionFile(f)
+          e.target.value = ''
+        }}
       />
       {shareOpen && (
         <div className="pointer-events-none absolute inset-x-0 bottom-12 z-30 flex justify-center">
           <div className="pointer-events-auto animate-slide-up">
-          <SharePopover
-            fileName={docId}
-            shareId={share?.shareId ?? null}
-            hasPassword={Boolean(share?.password)}
-            onSetPassword={applyPassword}
-            onClose={() => setShareOpen(false)}
-          />
+            <SharePopover
+              fileName={docId}
+              shareId={share?.shareId ?? null}
+              hasPassword={Boolean(share?.password)}
+              onSetPassword={applyPassword}
+              onClose={() => setShareOpen(false)}
+            />
           </div>
         </div>
       )}
@@ -156,18 +285,20 @@ export default function Editor() {
           <span className="rounded-md border border-neutral-200 bg-white px-2.5 py-1 text-xs font-medium text-neutral-700">
             {docId}
           </span>
-          {/* Figma title pill: v1 · DD.MM.YYYY · N comments · delete */}
+          {/* Figma title pill: vN · DD.MM.YYYY · N comments · delete */}
           <span className="flex items-center gap-2 rounded-full bg-line px-3 py-1">
-            <span className="text-xs font-medium leading-4 text-ink">v1</span>
+            <span className="text-xs font-medium leading-4 text-ink">v{activeVersion}</span>
             <span className="text-xs leading-4 text-muted">
-              {formatDate(share?.createdAt ?? Date.now())}
+              {formatDate(activeMeta?.createdAt ?? share?.createdAt ?? Date.now())}
             </span>
             <span className="text-xs leading-4 text-muted">
               {comments.length} comment{comments.length === 1 ? '' : 's'}
             </span>
             <button
               type="button"
-              title="Delete this file and its share link"
+              title={
+                lastVersion ? 'Delete this file and its share link' : `Delete version v${activeVersion}`
+              }
               onClick={() => setConfirmDelete(true)}
               className="grid size-6 place-items-center rounded text-[#FB3449] transition hover:bg-red-50"
             >
@@ -182,9 +313,10 @@ export default function Editor() {
               className="inline-flex items-center gap-1.5 rounded-md px-1.5 py-1 text-xs font-medium text-emerald-600 transition hover:bg-emerald-50"
             >
               <span className="size-1.5 rounded-full bg-emerald-500" />
-              Shared{ctrl.loading ? ' · syncing…' : ' · refresh'}
+              Shared{ctrl.loading || switching ? ' · syncing…' : ' · refresh'}
             </button>
           )}
+          {hint && <span className="text-xs font-medium text-amber-600">{hint}</span>}
           {comments.length > 0 && (
             <button
               type="button"
@@ -203,27 +335,37 @@ export default function Editor() {
         </div>
         <div className="flex flex-1 gap-3 overflow-hidden">
           <div className="relative min-w-0 flex-1 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-          <Preview
-            key={docId}
-            html={html}
-            comments={comments}
-            activeId={activeId}
-            mode="comment"
-            onSelect={setActiveId}
-            onResolve={ctrl.resolve}
-            onDelete={
-              ctrl.remove
-                ? (id) => {
-                    ctrl.remove?.(id)
-                    setActiveId((cur) => (cur === id ? null : cur))
-                  }
-                : undefined
-            }
-            onCreate={async (draft) => {
-              const c = await ctrl.add(draft)
-              if (c) setActiveId(c.id)
-            }}
-          />
+            <VersionRail
+              versions={versions.map((v) => v.no)}
+              active={activeVersion}
+              onSelect={(no) => void switchVersion(no)}
+            />
+            <Preview
+              key={`${docId}:v${activeVersion}`}
+              html={html}
+              comments={comments}
+              activeId={activeId}
+              mode={isLatest ? 'comment' : 'view'}
+              onSelect={setActiveId}
+              onResolve={isLatest ? ctrl.resolve : undefined}
+              onDelete={
+                isLatest && ctrl.remove
+                  ? (id) => {
+                      ctrl.remove?.(id)
+                      setActiveId((cur) => (cur === id ? null : cur))
+                    }
+                  : undefined
+              }
+              onCreate={async (draft) => {
+                const c = await ctrl.add(draft)
+                if (c) setActiveId(c.id)
+              }}
+            />
+            {!isLatest && (
+              <div className="pointer-events-none absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-full bg-ink/85 px-3 py-1.5 text-xs font-medium text-white shadow-lg">
+                Viewing v{activeVersion} (read-only) · comment on v{latestVersion}
+              </div>
+            )}
           </div>
           {drawerOpen && (
             <div className="h-full shrink-0">
@@ -232,9 +374,9 @@ export default function Editor() {
                 activeId={activeId}
                 onSelect={setActiveId}
                 onClose={() => setDrawerOpen(false)}
-                onResolve={ctrl.resolve}
+                onResolve={isLatest ? ctrl.resolve : undefined}
                 onDelete={
-                  ctrl.remove
+                  isLatest && ctrl.remove
                     ? (id) => {
                         ctrl.remove?.(id)
                         setActiveId((cur) => (cur === id ? null : cur))
@@ -249,11 +391,15 @@ export default function Editor() {
 
       {confirmDelete && (
         <ConfirmDialog
-          title="Delete this file"
-          body="You are about to delete the imported file, its share link, and all comments. Reviewers with the link will lose access. This cannot be undone."
+          title={lastVersion ? 'Delete this file' : `Delete version v${activeVersion}`}
+          body={
+            lastVersion
+              ? 'You are about to delete the imported file, its share link, and all comments. Reviewers with the link will lose access. This cannot be undone.'
+              : `You are about to delete version v${activeVersion} and all of its comments. Other versions are kept. This cannot be undone.`
+          }
           confirmLabel={deleting ? 'Deleting…' : 'Yes, delete'}
           onCancel={() => setConfirmDelete(false)}
-          onConfirm={() => void deleteFile()}
+          onConfirm={() => void deleteActiveVersion()}
         />
       )}
     </div>

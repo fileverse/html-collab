@@ -53,6 +53,7 @@ export function useLocalComments(docId: string): CommentsController {
 export function useRemoteComments(
   shareId: string | null,
   password: string,
+  versionNo: number,
   opts: { owner: boolean; author: string },
 ): CommentsController {
   const [comments, setComments] = useState<Comment[]>([])
@@ -63,12 +64,12 @@ export function useRemoteComments(
   const refresh = useCallback(async () => {
     if (!shareId) return
     try {
-      const list = await listShareComments(shareId, password)
+      const list = await listShareComments(shareId, password, versionNo)
       setComments(list.map(toComment).sort(byCreatedAt))
     } catch {
       /* network blip — keep the last good set */
     }
-  }, [shareId, password])
+  }, [shareId, password, versionNo])
 
   useEffect(() => {
     if (!shareId) {
@@ -76,6 +77,7 @@ export function useRemoteComments(
       return
     }
     let alive = true
+    setComments([]) // version changed → don't show the previous version's pins
     setLoading(true)
     refresh().finally(() => alive && setLoading(false))
     const t = setInterval(refresh, 10_000)
@@ -83,7 +85,7 @@ export function useRemoteComments(
       alive = false
       clearInterval(t)
     }
-  }, [shareId, refresh])
+  }, [shareId, versionNo, refresh])
 
   const add = useCallback(
     async (draft: CommentDraft) => {
@@ -92,6 +94,7 @@ export function useRemoteComments(
         const sc = await addShareComment({
           shareId,
           password,
+          versionNo,
           author: authorRef.current,
           anchor: draft.anchor,
           offset: draft.offset,
@@ -104,7 +107,7 @@ export function useRemoteComments(
         return null
       }
     },
-    [shareId, password],
+    [shareId, password, versionNo],
   )
 
   const resolve = useCallback(

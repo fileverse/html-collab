@@ -4,9 +4,10 @@ import { CommentIcon, DownloadIcon, Logo } from '@/components/icons'
 import { cn } from '@/lib/cn'
 import Preview from '@/features/preview/Preview'
 import CommentDrawer from '@/features/comments/CommentDrawer'
+import VersionRail from '@/features/versions/VersionRail'
 import { useRemoteComments } from '@/features/comments/controllers'
 import { downloadFeedbackFile } from '@/features/export/exportDoc'
-import { fetchShare, fetchShareMeta } from '@/features/share/api'
+import { fetchShare, fetchShareMeta, type VersionInfo } from '@/features/share/api'
 
 type Phase = 'loading' | 'notfound' | 'locked' | 'opening' | 'ready' | 'error'
 
@@ -20,12 +21,19 @@ export default function Review() {
   const [html, setHtml] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(true)
+  const [versions, setVersions] = useState<VersionInfo[]>([])
+  const [activeVersion, setActiveVersion] = useState(1)
+
+  const latestVersion = versions.reduce((m, v) => Math.max(m, v.version_no), activeVersion)
+  const isLatest = activeVersion === latestVersion
 
   // Comments come from the shared source of truth once unlocked (add-only).
-  const ctrl = useRemoteComments(phase === 'ready' ? (shareId ?? null) : null, password, {
-    owner: false,
-    author: name.trim() || 'Guest',
-  })
+  const ctrl = useRemoteComments(
+    phase === 'ready' ? (shareId ?? null) : null,
+    password,
+    activeVersion,
+    { owner: false, author: name.trim() || 'Guest' },
+  )
 
   useEffect(() => {
     if (!shareId) return
@@ -53,9 +61,11 @@ export default function Review() {
     setGateError(null)
     setPhase('opening')
     try {
-      const d = await fetchShare(shareId, pwd) // validates password + returns html
+      const d = await fetchShare(shareId, pwd) // validates password + returns latest
       setHtml(d.html)
       setFileName(d.file_name)
+      setVersions(d.versions)
+      setActiveVersion(d.version_no)
       setPassword(pwd)
       setPhase('ready')
     } catch (e) {
@@ -65,6 +75,18 @@ export default function Review() {
         setPhase('locked')
       } else if (msg === 'not_found') setPhase('notfound')
       else setPhase('error')
+    }
+  }
+
+  async function switchVersion(no: number) {
+    if (!shareId || no === activeVersion) return
+    try {
+      const d = await fetchShare(shareId, password, no)
+      setHtml(d.html)
+      setActiveVersion(no)
+      setActiveId(null)
+    } catch {
+      /* keep the current version on failure */
     }
   }
 
@@ -169,20 +191,30 @@ export default function Review() {
       <div className="mx-auto flex h-screen max-w-7xl flex-col px-6 pb-6 pt-[72px]">
         <div className="flex flex-1 gap-3 overflow-hidden">
           <div className="relative min-w-0 flex-1 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
-          {html && (
-            <Preview
-              key={shareId}
-              html={html}
-              comments={ctrl.comments}
-              activeId={activeId}
-              mode="comment"
-              onSelect={setActiveId}
-              onCreate={async (draft) => {
-                const c = await ctrl.add(draft)
-                if (c) setActiveId(c.id)
-              }}
+            <VersionRail
+              versions={versions.map((v) => v.version_no)}
+              active={activeVersion}
+              onSelect={(no) => void switchVersion(no)}
             />
-          )}
+            {html && (
+              <Preview
+                key={`${shareId}:v${activeVersion}`}
+                html={html}
+                comments={ctrl.comments}
+                activeId={activeId}
+                mode={isLatest ? 'comment' : 'view'}
+                onSelect={setActiveId}
+                onCreate={async (draft) => {
+                  const c = await ctrl.add(draft)
+                  if (c) setActiveId(c.id)
+                }}
+              />
+            )}
+            {!isLatest && (
+              <div className="pointer-events-none absolute bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-full bg-ink/85 px-3 py-1.5 text-xs font-medium text-white shadow-lg">
+                Viewing v{activeVersion} (read-only) · comment on the latest, v{latestVersion}
+              </div>
+            )}
           </div>
           {drawerOpen && (
             <div className="h-full shrink-0">

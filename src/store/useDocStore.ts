@@ -6,6 +6,8 @@ type DocState = {
   html: string | null
   fileName: string | null
   setDoc: (html: string, fileName: string) => void
+  /** Swap just the html (e.g. switching versions; the project name is stable). */
+  setHtml: (html: string) => void
   reset: () => void
 }
 
@@ -15,6 +17,7 @@ export const useDocStore = create<DocState>()(
       html: null,
       fileName: null,
       setDoc: (html, fileName) => set({ html, fileName }),
+      setHtml: (html) => set({ html }),
       reset: () => set({ html: null, fileName: null }),
     }),
     { name: 'aifl:doc:v1' },

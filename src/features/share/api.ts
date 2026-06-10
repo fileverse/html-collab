@@ -27,7 +27,16 @@ export type ShareMeta =
   | { exists: false }
   | { exists: true; requires_password: boolean; file_name: string }
 
-export type ShareDoc = { file_name: string; html: string; comments: ShareComment[] }
+/** One version of a shared project (metadata; html fetched via get_share). */
+export type VersionInfo = { version_no: number; file_name: string; created_at: string }
+
+export type ShareDoc = {
+  file_name: string
+  html: string
+  version_no: number
+  versions: VersionInfo[]
+  comments: ShareComment[]
+}
 
 function client() {
   if (!supabase) throw new Error('Supabase is not configured (set VITE_SUPABASE_* in .env.local).')
@@ -64,10 +73,16 @@ export async function fetchShareMeta(shareId: string): Promise<ShareMeta> {
   return data as ShareMeta
 }
 
-export async function fetchShare(shareId: string, password: string): Promise<ShareDoc> {
+/** Fetch a version (latest if versionNo omitted) + its comments + the version list. */
+export async function fetchShare(
+  shareId: string,
+  password: string,
+  versionNo?: number,
+): Promise<ShareDoc> {
   const { data, error } = await client().rpc('get_share', {
     p_share_id: shareId,
     p_password: password,
+    p_version_no: versionNo ?? null,
   })
   if (error) {
     const c = codeOf(error.message)
@@ -76,9 +91,43 @@ export async function fetchShare(shareId: string, password: string): Promise<Sha
   return data as ShareDoc
 }
 
+/** Owner uploads the next version (max 3). Returns the new version number. */
+export async function addVersion(input: {
+  shareId: string
+  ownerToken: string
+  fileName: string
+  html: string
+}): Promise<number> {
+  const { data, error } = await client().rpc('add_version', {
+    p_share_id: input.shareId,
+    p_owner_token: input.ownerToken,
+    p_file_name: input.fileName,
+    p_html: input.html,
+  })
+  if (error) throw new Error(error.message) // may be 'max_versions' / 'not_owner'
+  return (data as { version_no: number }).version_no
+}
+
+/** Owner deletes a version. Returns how many remain + whether the share is gone. */
+export async function deleteVersion(
+  shareId: string,
+  ownerToken: string,
+  versionNo: number,
+): Promise<{ remaining: number; shareDeleted: boolean }> {
+  const { data, error } = await client().rpc('delete_version', {
+    p_share_id: shareId,
+    p_owner_token: ownerToken,
+    p_version_no: versionNo,
+  })
+  if (error) throw new Error(error.message)
+  const d = data as { remaining: number; share_deleted: boolean }
+  return { remaining: d.remaining, shareDeleted: d.share_deleted }
+}
+
 export async function addShareComment(input: {
   shareId: string
   password: string
+  versionNo: number
   author: string
   anchor: Anchor
   offset: { x: number; y: number }
@@ -87,6 +136,7 @@ export async function addShareComment(input: {
   const { data, error } = await client().rpc('add_comment', {
     p_share_id: input.shareId,
     p_password: input.password,
+    p_version_no: input.versionNo,
     p_author: input.author,
     p_anchor: input.anchor,
     p_offset: input.offset,
@@ -96,11 +146,16 @@ export async function addShareComment(input: {
   return data as ShareComment
 }
 
-/** Lightweight comments-only fetch (for polling); html is not re-sent. */
-export async function listShareComments(shareId: string, password: string): Promise<ShareComment[]> {
+/** Lightweight comments-only fetch for one version (for polling). */
+export async function listShareComments(
+  shareId: string,
+  password: string,
+  versionNo: number,
+): Promise<ShareComment[]> {
   const { data, error } = await client().rpc('list_comments', {
     p_share_id: shareId,
     p_password: password,
+    p_version_no: versionNo,
   })
   if (error) throw new Error(codeOf(error.message))
   return (data ?? []) as ShareComment[]

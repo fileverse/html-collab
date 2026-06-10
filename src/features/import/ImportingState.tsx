@@ -1,7 +1,13 @@
 import TopBar from '@/components/TopBar'
 
 /** "Reading HTML file" loading screen (Figma: File import). */
-export default function ImportingState({ fileName }: { fileName?: string }) {
+export default function ImportingState({
+  fileName,
+  label = 'Reading HTML file',
+}: {
+  fileName?: string
+  label?: string
+}) {
   return (
     <div className="relative min-h-screen bg-dotgrid">
       <TopBar shareDisabled downloadDisabled />
@@ -20,7 +26,8 @@ export default function ImportingState({ fileName }: { fileName?: string }) {
           </div>
           <div className="flex items-center gap-2 text-sm text-muted">
             <span className="size-3.5 animate-spin rounded-full border-2 border-line border-t-muted" />
-            Reading HTML file{fileName ? ` — ${fileName}` : ''}
+            {label}
+            {fileName ? ` — ${fileName}` : ''}
           </div>
         </div>
       </div>

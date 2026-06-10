@@ -21,6 +21,8 @@ type TopBarProps = {
   downloadDisabled?: boolean
   /** Log in (no auth yet — inert placeholder to match the design). */
   onLogin?: () => void
+  /** Click the logo (e.g. start a new project / go home). */
+  onLogoClick?: () => void
 }
 
 export default function TopBar({
@@ -34,11 +36,18 @@ export default function TopBar({
   onDownload,
   downloadDisabled = false,
   onLogin,
+  onLogoClick,
 }: TopBarProps) {
   return (
     <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between p-6">
       <div className="pointer-events-auto">
-        <Logo />
+        {onLogoClick ? (
+          <button type="button" onClick={onLogoClick} title="Start a new file" className="block">
+            <Logo />
+          </button>
+        ) : (
+          <Logo />
+        )}
       </div>
 
       <div className="pointer-events-auto flex items-center gap-2">
