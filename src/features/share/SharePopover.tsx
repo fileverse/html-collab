@@ -1,58 +1,37 @@
 import { useState } from 'react'
 import { cn } from '@/lib/cn'
-import { CloseIcon, ShareIcon } from '@/components/icons'
+import { CloseIcon } from '@/components/icons'
 import { isSupabaseConfigured } from '@/lib/supabase'
-import { createShare, type NewComment } from './api'
 
 type Props = {
   fileName: string
-  html: string
-  comments: NewComment[]
-  /** Set if this doc was already shared — shows the existing link. */
-  existingShareId?: string
-  existingHasPassword?: boolean
-  /** Called once a share exists, so the editor can remember it. */
-  onShared?: (shareId: string, password: string) => void
+  /** Share id (auto-created at import); null while creating / unavailable. */
+  shareId: string | null
+  /** Whether the share currently has a password. */
+  hasPassword: boolean
+  /** Apply a new password ('' disables). Resolves false on failure. */
+  onSetPassword: (newPassword: string) => Promise<boolean>
   onClose: () => void
 }
 
-/** Share card (Figma): create a password-optional public review link. */
+/** Share card (Figma): live link + password set / reset / disable. */
 export default function SharePopover({
   fileName,
-  html,
-  comments,
-  existingShareId,
-  existingHasPassword = false,
-  onShared,
+  shareId,
+  hasPassword,
+  onSetPassword,
   onClose,
 }: Props) {
-  const [requirePassword, setRequirePassword] = useState(existingHasPassword)
+  const [checked, setChecked] = useState(hasPassword)
+  const [editing, setEditing] = useState(false)
   const [password, setPassword] = useState('')
+  const [showPw, setShowPw] = useState(false)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [link, setLink] = useState<string | null>(
-    existingShareId ? `${window.location.origin}/r/${existingShareId}` : null,
-  )
+  const [confirmDisable, setConfirmDisable] = useState(false)
   const [copied, setCopied] = useState(false)
 
-  async function create() {
-    if (requirePassword && !password.trim()) {
-      setError('Enter a password or uncheck "Password required".')
-      return
-    }
-    setError(null)
-    setBusy(true)
-    try {
-      const pwd = requirePassword ? password.trim() : ''
-      const id = await createShare({ fileName, html, password: pwd, comments })
-      setLink(`${window.location.origin}/r/${id}`)
-      onShared?.(id, pwd)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Could not create the link.')
-    } finally {
-      setBusy(false)
-    }
-  }
+  const link = shareId ? `${window.location.origin}/r/${shareId}` : null
 
   async function copy() {
     if (!link) return
@@ -65,94 +44,217 @@ export default function SharePopover({
     }
   }
 
+  async function save() {
+    if (!password.trim()) return
+    setBusy(true)
+    setError(null)
+    const ok = await onSetPassword(password.trim())
+    setBusy(false)
+    if (ok) {
+      setEditing(false)
+      setPassword('')
+    } else {
+      setError('Could not save the password. Try again.')
+    }
+  }
+
+  async function disable() {
+    setBusy(true)
+    setError(null)
+    const ok = await onSetPassword('')
+    setBusy(false)
+    setConfirmDisable(false)
+    if (ok) setChecked(false)
+    else setError('Could not disable password access. Try again.')
+  }
+
+  function toggleCheckbox(next: boolean) {
+    if (!next && hasPassword) {
+      setConfirmDisable(true) // confirm before turning protection off
+      return
+    }
+    setChecked(next)
+    setEditing(next && !hasPassword)
+  }
+
   return (
-    <div className="w-[420px] max-w-[calc(100vw-2.5rem)] rounded-2xl border border-line bg-white p-4 shadow-[0px_8px_32px_0px_rgba(0,0,0,0.15)]">
+    <div className="w-[620px] max-w-[calc(100vw-2.5rem)] rounded-2xl border border-line bg-white p-4 shadow-[0px_8px_32px_0px_rgba(0,0,0,0.15)]">
+      {/* header: Live pill + close */}
       <div className="flex items-start justify-between">
-        {link ? (
-          <span className="inline-flex items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-600">
-            Live
-            <span className="size-1.5 rounded-full bg-emerald-500" />
-            Accepting comments
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-2 text-sm font-medium text-ink">
-            <ShareIcon size={16} /> Share for review
-          </span>
-        )}
+        <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50/60 px-2 py-2 text-xs font-medium leading-4">
+          <span className="text-emerald-700">Live</span>
+          <span className="size-1.5 rounded-full bg-emerald-500" />
+          <span className="text-emerald-700">Accepting comments</span>
+        </span>
         <button
           type="button"
           title="Close"
           onClick={onClose}
-          className="grid size-6 place-items-center rounded text-ink transition hover:bg-black/5"
+          className="grid size-8 place-items-center rounded-lg text-ink transition hover:bg-black/5"
         >
-          <CloseIcon />
+          <CloseIcon size={14} />
         </button>
       </div>
 
-      <p className="mt-3 text-sm font-medium text-ink">
-        <span className="font-semibold">{fileName}</span> ready for review
-      </p>
-      <p className="mt-1 text-xs leading-5 text-muted">
+      <p className="mt-4 text-sm font-medium leading-5 text-ink">{fileName} ready for review</p>
+      <p className="mt-1 text-sm leading-5 text-muted">
         Share the link below with anyone who should review this file.
       </p>
 
       {!isSupabaseConfigured ? (
-        <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
+        <p className="mt-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700">
           Sharing isn’t configured. Add VITE_SUPABASE_* to .env.local.
         </p>
-      ) : link ? (
-        <div className="mt-3">
-          <div className="rounded-xl border border-line bg-black/[0.02] p-3">
-            <p className="text-xs text-muted">Public review link</p>
-            <div className="mt-1 flex items-center gap-2">
-              <span className="min-w-0 flex-1 truncate text-sm text-ink">{link}</span>
+      ) : (
+        <>
+          {/* link box */}
+          <div className="mt-4 overflow-hidden rounded-lg border border-line">
+            <div className="border-b border-line bg-surface px-4 py-2 text-xs leading-4 text-muted">
+              Public review link
+            </div>
+            <div className="flex items-center gap-3 px-4 py-2.5">
+              <span className="min-w-0 flex-1 truncate text-sm leading-5 text-ink">
+                {link ?? 'Creating link…'}
+              </span>
               <button
                 type="button"
                 onClick={copy}
-                className="shrink-0 rounded-full bg-ink px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-ink/90"
+                disabled={!link}
+                className={cn(
+                  'shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition',
+                  link
+                    ? 'bg-black text-white hover:bg-black/90'
+                    : 'cursor-not-allowed bg-line text-disabled',
+                )}
               >
                 {copied ? 'Copied!' : 'Copy link'}
               </button>
             </div>
           </div>
-          {requirePassword && (
-            <p className="mt-2 text-xs text-muted">🔒 Password protected — share it separately.</p>
-          )}
-        </div>
-      ) : (
-        <div className="mt-4">
-          <label className="flex items-center gap-2 text-sm text-ink">
-            <input
-              type="checkbox"
-              checked={requirePassword}
-              onChange={(e) => setRequirePassword(e.target.checked)}
-              className="size-4 accent-neutral-900"
-            />
-            Password required
-          </label>
-          {requirePassword && (
-            <input
-              type="text"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Set a password"
-              className="mt-2 w-full rounded-lg border border-line p-2 text-sm text-ink outline-none placeholder:text-muted focus:border-ink/30"
-            />
-          )}
-          {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
+
+          {/* password */}
+          <div className="mt-4">
+            <label className="flex w-fit cursor-pointer items-center gap-2 text-sm text-ink">
+              <input
+                type="checkbox"
+                checked={checked}
+                disabled={!shareId || busy}
+                onChange={(e) => toggleCheckbox(e.target.checked)}
+                className="size-4 accent-black"
+              />
+              Password required
+            </label>
+
+            {checked && hasPassword && !editing && (
+              <p className="mt-2 text-xs leading-4 text-muted">
+                Password access enabled.{' '}
+                <button
+                  type="button"
+                  onClick={() => setEditing(true)}
+                  className="font-medium text-link hover:underline"
+                >
+                  Reset
+                </button>
+              </p>
+            )}
+
+            {checked && editing && (
+              <div className="mt-2 flex items-center gap-2">
+                <div className="relative min-w-0 flex-1">
+                  <input
+                    type={showPw ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        void save()
+                      }
+                    }}
+                    placeholder="Enter password"
+                    autoFocus
+                    className="w-full rounded-lg border border-line p-2.5 pr-9 text-sm text-ink outline-none placeholder:text-muted focus:border-ink/30"
+                  />
+                  <button
+                    type="button"
+                    title={showPw ? 'Hide password' : 'Show password'}
+                    onClick={() => setShowPw((s) => !s)}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted transition hover:text-ink"
+                  >
+                    {showPw ? '🙈' : '👁'}
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void save()}
+                  disabled={!password.trim() || busy}
+                  className={cn(
+                    'shrink-0 rounded-lg px-4 py-2.5 text-sm font-medium transition',
+                    password.trim() && !busy
+                      ? 'bg-black text-white hover:bg-black/90'
+                      : 'cursor-not-allowed bg-line text-disabled',
+                  )}
+                >
+                  {busy ? 'Saving…' : 'Save'}
+                </button>
+              </div>
+            )}
+
+            {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
+          </div>
+        </>
+      )}
+
+      {/* disable-password confirm (Figma modal) */}
+      {confirmDisable && (
+        <ConfirmDialog
+          title="Disable password access"
+          body="You are about to disable password protected access. Anyone with the link to this file will be able to access your file."
+          confirmLabel={busy ? 'Disabling…' : 'Yes, disable'}
+          onCancel={() => setConfirmDisable(false)}
+          onConfirm={() => void disable()}
+        />
+      )}
+    </div>
+  )
+}
+
+/** Small centered confirm dialog (Figma: disable password access). */
+export function ConfirmDialog({
+  title,
+  body,
+  confirmLabel,
+  onCancel,
+  onConfirm,
+}: {
+  title: string
+  body: string
+  confirmLabel: string
+  onCancel: () => void
+  onConfirm: () => void
+}) {
+  return (
+    <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-6">
+      <div className="w-[400px] max-w-full rounded-2xl bg-white p-5 shadow-[0px_8px_32px_0px_rgba(0,0,0,0.25)]">
+        <p className="text-sm font-medium leading-5 text-ink">{title}</p>
+        <p className="mt-2 text-sm leading-5 text-muted">{body}</p>
+        <div className="mt-4 flex justify-end gap-2">
           <button
             type="button"
-            onClick={create}
-            disabled={busy}
-            className={cn(
-              'mt-3 w-full rounded-full bg-ink px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-ink/90',
-              busy && 'cursor-wait opacity-60',
-            )}
+            onClick={onCancel}
+            className="rounded-lg border border-line bg-white px-4 py-2 text-sm font-medium text-ink transition hover:bg-neutral-50"
           >
-            {busy ? 'Creating link…' : 'Create review link'}
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white transition hover:bg-black/90"
+          >
+            {confirmLabel}
           </button>
         </div>
-      )}
+      </div>
     </div>
   )
 }

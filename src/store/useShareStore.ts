@@ -12,6 +12,8 @@ import { persist } from 'zustand/middleware'
 export type ShareRecord = {
   shareId: string
   password: string
+  /** Secret proving ownership — required to change the password or delete. */
+  ownerToken: string
   createdAt: number
 }
 

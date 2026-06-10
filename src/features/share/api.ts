@@ -46,7 +46,7 @@ export async function createShare(input: {
   html: string
   password: string
   comments: NewComment[]
-}): Promise<string> {
+}): Promise<{ id: string; ownerToken: string }> {
   const { data, error } = await client().rpc('create_share', {
     p_file_name: input.fileName,
     p_html: input.html,
@@ -54,7 +54,8 @@ export async function createShare(input: {
     p_comments: input.comments,
   })
   if (error) throw new Error(error.message)
-  return data as string
+  const d = data as { id: string; owner_token: string }
+  return { id: d.id, ownerToken: d.owner_token }
 }
 
 export async function fetchShareMeta(shareId: string): Promise<ShareMeta> {
@@ -131,6 +132,29 @@ export async function deleteShareComment(
     p_comment_id: commentId,
   })
   if (error) throw new Error(codeOf(error.message))
+}
+
+/** Set, replace, or (with '') disable the share password. Owner-token gated. */
+export async function setSharePassword(
+  shareId: string,
+  ownerToken: string,
+  newPassword: string,
+): Promise<void> {
+  const { error } = await client().rpc('set_share_password', {
+    p_share_id: shareId,
+    p_owner_token: ownerToken,
+    p_new_password: newPassword,
+  })
+  if (error) throw new Error(error.message)
+}
+
+/** Delete the share and all its comments. Owner-token gated. */
+export async function deleteShare(shareId: string, ownerToken: string): Promise<void> {
+  const { error } = await client().rpc('delete_share', {
+    p_share_id: shareId,
+    p_owner_token: ownerToken,
+  })
+  if (error) throw new Error(error.message)
 }
 
 /** Map a server ShareComment into the shape Preview/CommentDrawer expect. */

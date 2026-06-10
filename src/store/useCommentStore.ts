@@ -29,6 +29,8 @@ type CommentState = {
   add: (docId: string, draft: CommentDraft, author?: string) => Comment
   remove: (id: string) => void
   toggleResolved: (id: string) => void
+  /** Drop all comments for a document (used when the file is deleted). */
+  clearDoc: (docId: string) => void
 }
 
 let seq = 0
@@ -53,6 +55,8 @@ export const useCommentStore = create<CommentState>()(
         return comment
       },
       remove: (id) => set((s) => ({ comments: s.comments.filter((c) => c.id !== id) })),
+      clearDoc: (docId) =>
+        set((s) => ({ comments: s.comments.filter((c) => c.docId !== docId) })),
       toggleResolved: (id) =>
         set((s) => ({
           comments: s.comments.map((c) =>
