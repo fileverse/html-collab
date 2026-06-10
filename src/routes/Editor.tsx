@@ -49,7 +49,8 @@ export default function Editor() {
 
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
-  const [shareOpen, setShareOpen] = useState(false)
+  // Figma: the share card is open by default right after import.
+  const [shareOpen, setShareOpen] = useState(true)
   const [copied, setCopied] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
@@ -138,7 +139,8 @@ export default function Editor() {
         onUpload={() => navigate('/')}
       />
       {shareOpen && (
-        <div className="absolute right-5 top-[68px] z-30">
+        <div className="pointer-events-none absolute inset-x-0 bottom-12 z-30 flex justify-center">
+          <div className="pointer-events-auto animate-slide-up">
           <SharePopover
             fileName={docId}
             shareId={share?.shareId ?? null}
@@ -146,6 +148,7 @@ export default function Editor() {
             onSetPassword={applyPassword}
             onClose={() => setShareOpen(false)}
           />
+          </div>
         </div>
       )}
       <div className="mx-auto flex h-screen max-w-7xl flex-col px-6 pb-6 pt-[72px]">

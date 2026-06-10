@@ -31,6 +31,21 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+/* Share card enters from the bottom (Figma: "move in from bottom") */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-slide-up {
+  animation: slide-up 0.25s ease-out;
+}
+
 /* Faint dot grid used on the home / editor / password screens (Figma canvas) */
 .bg-dotgrid {
   background-color: #ffffff;
