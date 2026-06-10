@@ -123,8 +123,40 @@
 
   function targetAt(x, y) {
     var el = document.elementFromPoint(x, y)
-    if (!el || el === document.documentElement || el === document.body) return null
+    if (!el || el === document.documentElement) return null
+    // `body` IS allowed: pages that are just text (no wrapping elements) have
+    // their text directly under <body>, so excluding it would make those pages
+    // uncommentable. Callers refine the body case via textRectAt().
     return el
+  }
+
+  // Tight rect of the text run under a point — used so commenting on bare body
+  // text highlights just that text, not the whole page. Returns null over
+  // genuinely empty space (so normal pages' margins stay un-highlighted).
+  function textRectAt(x, y) {
+    var range = null
+    if (document.caretRangeFromPoint) {
+      range = document.caretRangeFromPoint(x, y)
+    } else if (document.caretPositionFromPoint) {
+      var pos = document.caretPositionFromPoint(x, y)
+      if (pos) {
+        range = document.createRange()
+        range.setStart(pos.offsetNode, pos.offset)
+        range.collapse(true)
+      }
+    }
+    if (!range) return null
+    var node = range.startContainer
+    if (!node || node.nodeType !== 3 || !(node.textContent || '').trim()) return null
+    try {
+      var rng = document.createRange()
+      rng.selectNodeContents(node)
+      var r = rng.getBoundingClientRect()
+      if (r && r.width && r.height) return { x: r.left, y: r.top, w: r.width, h: r.height }
+    } catch (e) {
+      /* ignore */
+    }
+    return null
   }
 
   function reportRects() {
@@ -198,6 +230,12 @@
           post({ type: 'hover', rect: null, label: null })
           return
         }
+        if (el === document.body) {
+          // only react over actual text — empty margins stay clean
+          var tr = textRectAt(lastX, lastY)
+          post(tr ? { type: 'hover', rect: tr, label: 'text' } : { type: 'hover', rect: null, label: null })
+          return
+        }
         post({ type: 'hover', rect: rectOf(el), label: labelFor(el) })
       })
     },
@@ -210,6 +248,8 @@
       if (mode !== 'comment') return
       var el = targetAt(e.clientX, e.clientY)
       if (!el) return
+      // on bare <body>, only anchor where there's real text (skip empty space)
+      if (el === document.body && !textRectAt(e.clientX, e.clientY)) return
       e.preventDefault()
       e.stopPropagation()
       var r = el.getBoundingClientRect()
