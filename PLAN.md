@@ -29,13 +29,23 @@ Build order for the AI Feedback Loop POC. All eight milestones are complete.
 
 - **Comment sync-back.** Shared docs use Supabase as the single source of truth;
   guest comments appear in the owner’s editor (polled ~10s + manual Refresh).
-- **Export from the review link** so reviewers/owners can grab the re-prompt file
-  without round-tripping through the editor.
+- **Export from the review link** + **Copy re-prompt**; export now also writes
+  inline `data-feedback` attributes and a top-of-`<head>` directive for agents.
+- **Faithful Figma pass** — Helvetica Neue, brand `#ffdf0a`, real Fileverse logo,
+  exact toolbar SVGs, landing/password/import states; decluttered comment markers.
+- **Share lifecycle.** Link **auto-creates on import**; share card open by default
+  (centered, slide-up). Password **set / reset / disable** (with a confirm).
+  **Owner token** gates destructive actions (so link holders can’t hijack/delete).
+  Title-pill **trash** deletes a version or the whole file.
+- **Versioning (up to 3).** Each version is a review round with its own comments;
+  left-margin switcher; “Import new version of this file” button; reviewers
+  comment on the latest, read older read-only; `versions` table (migration 0006).
+- **Resilience fixes.** Commenting works on bare text directly in `<body>`; the
+  editor re-creates the share if its persisted id no longer exists server-side.
 
 ## Possible next steps (beyond the POC)
 
 - Realtime comments (Supabase Realtime) to replace the 10s poll.
 - Multiple documents / a dashboard of shares.
-- Re-sync the **markup** too, so post-share edits update the link.
-- Owner identity via a token instead of storing the share password locally.
+- Re-sync the **markup** of an existing version (today you add a new version).
 - Code-split `supabase-js` further / lazy-load the share popover.
