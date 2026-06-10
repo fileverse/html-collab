@@ -18,6 +18,7 @@ import {
   createShare,
   deleteVersion,
   fetchShare,
+  fetchShareMeta,
   setSharePassword,
 } from '@/features/share/api'
 import { isSupabaseConfigured } from '@/lib/supabase'
@@ -96,22 +97,34 @@ export default function Editor() {
     }
   }, [html, sampleId, setDoc])
 
-  // Figma: the share link exists as soon as a file is imported. Auto-create a
-  // (password-less) share + version 1 for any doc that doesn't have one yet,
-  // migrating any local comments into it so nothing is lost.
-  const creatingRef = useRef(false)
+  // Figma: the share link exists as soon as a file is imported. Ensure every
+  // imported doc has a *live* share + version 1. We also re-create when the
+  // persisted record points at a share that no longer exists server-side
+  // (e.g. the DB was wiped) — otherwise the stale shareId would 404 forever.
+  const ensuringRef = useRef(false)
   useEffect(() => {
-    if (!html || share || !isSupabaseConfigured || creatingRef.current) return
-    creatingRef.current = true
-    const localComments = local.comments.map((c) => ({
-      author: c.author,
-      anchor: c.anchor,
-      offset: c.offset,
-      body: c.body,
-      resolved: c.resolved,
-    }))
-    createShare({ fileName: docId, html, password: '', comments: localComments })
-      .then(({ id, ownerToken }) => {
+    if (!html || !isSupabaseConfigured || ensuringRef.current) return
+    ensuringRef.current = true
+    ;(async () => {
+      try {
+        if (share) {
+          const meta = await fetchShareMeta(share.shareId).catch(() => null)
+          if (meta?.exists) return // persisted share is still valid — nothing to do
+          // stale (deleted / DB wiped) — fall through and overwrite with a fresh one
+        }
+        const localComments = local.comments.map((c) => ({
+          author: c.author,
+          anchor: c.anchor,
+          offset: c.offset,
+          body: c.body,
+          resolved: c.resolved,
+        }))
+        const { id, ownerToken } = await createShare({
+          fileName: docId,
+          html,
+          password: '',
+          comments: localComments,
+        })
         const now = Date.now()
         setShare(docId, {
           shareId: id,
@@ -122,13 +135,12 @@ export default function Editor() {
           activeVersion: 1,
         })
         if (localComments.length > 0) clearDocComments(docId) // migrated to the share
-      })
-      .catch(() => {
+      } catch {
         /* offline / misconfigured — local-only mode still works (no versioning) */
-      })
-      .finally(() => {
-        creatingRef.current = false
-      })
+      } finally {
+        ensuringRef.current = false
+      }
+    })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [html, docId, share])
 
