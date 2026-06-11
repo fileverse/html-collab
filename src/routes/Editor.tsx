@@ -361,17 +361,18 @@ export default function Editor() {
                   setTimeout(() => setCopied(false), 1500)
                 }
               }}
-              className="grid size-9 place-items-center rounded-lg border border-line bg-white text-ink shadow-sm transition hover:bg-neutral-50"
+              className="flex h-8 items-center gap-1.5 rounded-lg border border-line bg-white px-2.5 text-xs font-medium text-ink shadow-sm transition hover:bg-neutral-50"
             >
-              {copied ? <ResolveIcon size={16} /> : <CopyIcon size={16} />}
+              {copied ? <ResolveIcon size={14} /> : <CopyIcon size={14} />}
+              {copied ? 'Copied!' : 'Copy comments'}
             </button>
             <button
               type="button"
               title="Delete this HTML and start a new session"
               onClick={() => setConfirmFile(true)}
-              className="grid size-9 place-items-center rounded-lg border border-line bg-white text-[#FB3449] shadow-sm transition hover:bg-red-50"
+              className="grid size-8 place-items-center rounded-lg border border-line bg-white text-[#FB3449] shadow-sm transition hover:bg-red-50"
             >
-              <TrashFillIcon size={16} />
+              <TrashFillIcon size={14} />
             </button>
           </div>
         </div>
