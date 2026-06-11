@@ -81,21 +81,14 @@ export default function TopBar({
           <CommentIcon />
         </FloatBtn>
 
-        <Pill
-          title="Share"
-          onClick={onShare}
-          active={shareOpen}
-          disabled={shareDisabled}
-        >
+        <FloatBtn title="Share" active={shareOpen} disabled={shareDisabled} onClick={onShare}>
           <ShareIcon />
-          Share
-        </Pill>
+        </FloatBtn>
 
         <Pill
           title="Download your HTML with all comments embedded directly in the same file. Ready to be shared with your AI chatbot."
           onClick={onDownload}
           disabled={downloadDisabled}
-          disabledFilled
         >
           <DownloadIcon />
           Download
@@ -111,23 +104,30 @@ function FloatBtn({
   title,
   active,
   badge,
+  disabled,
   onClick,
 }: {
   children: ReactNode
   title: string
   active?: boolean
   badge?: number
+  disabled?: boolean
   onClick?: () => void
 }) {
   return (
     <button
       type="button"
       title={title}
+      disabled={disabled}
       onClick={onClick}
       className={cn(
         'relative grid size-9 place-items-center rounded-full transition',
         FLOAT_SHADOW,
-        active ? 'bg-ink text-white' : 'bg-white text-ink hover:bg-neutral-50',
+        disabled
+          ? 'cursor-not-allowed bg-white text-disabled'
+          : active
+            ? 'bg-ink text-white'
+            : 'bg-white text-ink hover:bg-neutral-50',
       )}
     >
       {children}
@@ -151,15 +151,12 @@ function Pill({
   title,
   active,
   disabled,
-  disabledFilled,
   onClick,
 }: {
   children: ReactNode
   title: string
   active?: boolean
   disabled?: boolean
-  /** Download's disabled state has a filled (#e8ebec) background. */
-  disabledFilled?: boolean
   onClick?: () => void
 }) {
   return (
@@ -172,7 +169,7 @@ function Pill({
         'flex h-9 min-w-20 items-center justify-center gap-2 rounded-full px-3 text-sm font-medium transition',
         FLOAT_SHADOW,
         disabled
-          ? cn('cursor-not-allowed text-disabled', disabledFilled ? 'bg-line' : 'bg-white')
+          ? 'cursor-not-allowed bg-white text-disabled'
           : active
             ? 'bg-ink text-white'
             : 'bg-white text-ink hover:bg-neutral-50',

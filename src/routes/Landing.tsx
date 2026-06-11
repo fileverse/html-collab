@@ -91,10 +91,10 @@ export default function Landing() {
 
       {/* note — visible only in this empty state (Figma) */}
       <div className="pointer-events-none absolute right-[150px] top-[80px] hidden items-end gap-2 lg:flex">
-        <p className="pb-1 text-right text-xs leading-4 text-disabled">
+        <p className="pb-1 text-left text-xs leading-4 text-disabled">
           Once done collecting feedback,
           <br />
-          download the HTML+Comments file
+          download the <span className="italic">HTML+Comments file</span>
         </p>
         <img src={`${base}figma/note-arrow.svg`} alt="" className="h-[76px] w-[34px]" />
       </div>
@@ -114,17 +114,16 @@ export default function Landing() {
             <div key={s.n} className="flex items-stretch gap-4">
               {i > 0 && <div className="w-px self-stretch bg-line" />}
               <div className="flex w-[220px] flex-col gap-8">
-                <span className="w-fit rounded-lg border border-line bg-surface px-2 py-2 text-xs font-medium leading-4 text-ink">
+                <span className="inline-flex h-8 w-fit items-center rounded-lg border border-line bg-surface px-2 text-xs font-medium text-ink">
                   {s.n}
                 </span>
-                <div className="flex flex-col gap-12">
-                  <div className="flex flex-col gap-5">
-                    <p className="text-sm font-medium leading-5 text-ink">{s.title}</p>
-                    <p className="text-sm leading-5 text-muted">{s.body}</p>
-                  </div>
-                  <div className="grid h-[140px] place-items-center overflow-hidden rounded bg-surface">
-                    <img src={`${base}figma/steps/${s.img}.png`} alt="" className="max-h-[120px] w-auto object-contain" />
-                  </div>
+                <div className="flex flex-col gap-5">
+                  <p className="text-sm font-medium leading-5 text-ink">{s.title}</p>
+                  <p className="text-sm leading-5 text-muted">{s.body}</p>
+                </div>
+                {/* mt-auto bottom-aligns the illustration boxes across cards */}
+                <div className="mt-auto grid h-[140px] place-items-center overflow-hidden rounded bg-surface">
+                  <img src={`${base}figma/steps/${s.img}.png`} alt="" className="max-h-[120px] w-auto object-contain" />
                 </div>
               </div>
             </div>
@@ -139,7 +138,7 @@ export default function Landing() {
           >
             Import HTML
           </button>
-          <p className="text-sm leading-5 text-muted">Or drag &amp; drop the file on the screen</p>
+          <p className="text-xs leading-4 text-muted">Or drag &amp; drop the file on the screen</p>
           {error && <p className="text-sm text-red-500">{error}</p>}
         </div>
       </main>
