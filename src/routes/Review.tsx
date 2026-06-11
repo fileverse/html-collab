@@ -187,13 +187,17 @@ export default function Review() {
 
       {/* Version switcher lives in the left page margin, outside the canvas (Figma) */}
       <VersionRail
-        versions={versions.map((v) => v.version_no)}
+        versions={versions.map((v) => ({
+          no: v.version_no,
+          createdAt: Date.parse(v.created_at) || undefined,
+          commentCount: v.version_no === activeVersion ? ctrl.comments.length : v.comment_count,
+        }))}
         active={activeVersion}
         onSelect={(no) => void switchVersion(no)}
       />
 
       <div className="mx-auto flex h-screen max-w-7xl flex-col px-6 pb-6 pt-[72px]">
-        <div className="flex flex-1 gap-3 overflow-hidden">
+        <div className="relative flex flex-1 overflow-hidden">
           <div className="relative min-w-0 flex-1 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             {html && (
               <Preview
@@ -216,7 +220,7 @@ export default function Review() {
             )}
           </div>
           {drawerOpen && (
-            <div className="h-full shrink-0">
+            <div className="absolute bottom-3 right-3 top-3 z-30">
               <CommentDrawer
                 comments={ctrl.comments}
                 activeId={activeId}

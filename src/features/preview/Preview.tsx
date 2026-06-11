@@ -186,6 +186,16 @@ export default function Preview({
       {/* overlay — transparent to pointer events so the iframe receives them;
           only the pins + composer opt back in. */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        {/* click-outside backdrop: while a comment is focused, a click anywhere
+            off the popover/markers dismisses it (markers + popover sit above). */}
+        {activeId && !draft && (
+          <button
+            type="button"
+            aria-label="Close comment"
+            onClick={() => onSelect(null)}
+            className="pointer-events-auto absolute inset-0 cursor-default"
+          />
+        )}
         {mode === 'comment' && hover && !draft && (
           <div
             className="absolute rounded-[4px] bg-brand/[0.08] ring-2 ring-brand/60"

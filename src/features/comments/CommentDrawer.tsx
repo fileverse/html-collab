@@ -24,7 +24,7 @@ export default function CommentDrawer({
   const open = comments.filter((c) => !c.resolved).length
 
   return (
-    <aside className="flex h-full w-[336px] max-w-[90vw] flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+    <aside className="flex h-full w-[336px] max-w-[90vw] flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-[0px_8px_32px_0px_rgba(0,0,0,0.12)]">
       <header className="flex shrink-0 items-center gap-3 border-b border-neutral-200 px-4 py-3">
         <p className="flex-1 text-base font-medium leading-[22px] text-ink">Comments</p>
         {comments.length > 0 && (

@@ -64,7 +64,7 @@ export default function Composer({ author = 'You', onSubmit, onCancel }: Props) 
               canSend ? 'hover:bg-ink/90' : 'cursor-not-allowed opacity-40',
             )}
           >
-            Comment
+            Send
           </button>
         </div>
       </div>

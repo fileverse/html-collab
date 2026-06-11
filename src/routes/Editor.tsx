@@ -21,6 +21,7 @@ import {
   deleteVersion,
   fetchShare,
   fetchShareMeta,
+  listVersions,
   setSharePassword,
 } from '@/features/share/api'
 import { isSupabaseConfigured } from '@/lib/supabase'
@@ -79,6 +80,7 @@ export default function Editor() {
   const [uploading, setUploading] = useState(false)
   const [switching, setSwitching] = useState(false)
   const [hint, setHint] = useState<string | null>(null)
+  const [versionCounts, setVersionCounts] = useState<Record<number, number>>({})
   const versionInputRef = useRef<HTMLInputElement>(null)
 
   function flashHint(msg: string) {
@@ -146,6 +148,24 @@ export default function Editor() {
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [html, docId, share])
+
+  // Keep per-version comment counts current for the rail's hover pill.
+  useEffect(() => {
+    if (!share?.shareId || !isSupabaseConfigured) return
+    let alive = true
+    listVersions(share.shareId, share.password)
+      .then((vs) => {
+        if (!alive) return
+        const next: Record<number, number> = {}
+        for (const v of vs) next[v.version_no] = v.comment_count ?? 0
+        setVersionCounts(next)
+      })
+      .catch(() => {})
+    return () => {
+      alive = false
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [share?.shareId, share?.password, comments.length])
 
   async function applyPassword(newPassword: string): Promise<boolean> {
     if (!share?.ownerToken) return false
@@ -285,7 +305,12 @@ export default function Editor() {
       />
       {/* Version switcher lives in the left page margin, outside the canvas (Figma) */}
       <VersionRail
-        versions={versions.map((v) => v.no)}
+        versions={versions.map((v) => ({
+          no: v.no,
+          createdAt: v.createdAt,
+          // active version's count is live; others come from list_versions
+          commentCount: v.no === activeVersion ? comments.length : versionCounts[v.no],
+        }))}
         active={activeVersion}
         onSelect={(no) => void switchVersion(no)}
       />
@@ -376,7 +401,7 @@ export default function Editor() {
             </button>
           </div>
         </div>
-        <div className="flex flex-1 gap-3 overflow-hidden">
+        <div className="relative flex flex-1 overflow-hidden">
           <div className="relative min-w-0 flex-1 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
             <Preview
               key={`${docId}:v${activeVersion}`}
@@ -422,7 +447,7 @@ export default function Editor() {
             )}
           </div>
           {drawerOpen && (
-            <div className="h-full shrink-0">
+            <div className="absolute bottom-3 right-3 top-3 z-30">
               <CommentDrawer
                 comments={comments}
                 activeId={activeId}

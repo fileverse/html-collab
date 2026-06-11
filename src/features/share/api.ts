@@ -28,7 +28,12 @@ export type ShareMeta =
   | { exists: true; requires_password: boolean; file_name: string }
 
 /** One version of a shared project (metadata; html fetched via get_share). */
-export type VersionInfo = { version_no: number; file_name: string; created_at: string }
+export type VersionInfo = {
+  version_no: number
+  file_name: string
+  created_at: string
+  comment_count?: number
+}
 
 export type ShareDoc = {
   file_name: string
@@ -106,6 +111,16 @@ export async function addVersion(input: {
   })
   if (error) throw new Error(error.message) // may be 'max_versions' / 'not_owner'
   return (data as { version_no: number }).version_no
+}
+
+/** Cheap versions + per-version comment counts (for the version rail). */
+export async function listVersions(shareId: string, password: string): Promise<VersionInfo[]> {
+  const { data, error } = await client().rpc('list_versions', {
+    p_share_id: shareId,
+    p_password: password,
+  })
+  if (error) throw new Error(error.message)
+  return (data ?? []) as VersionInfo[]
 }
 
 /** Owner deletes a version. Returns how many remain + whether the share is gone. */

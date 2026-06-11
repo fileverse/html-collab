@@ -70,8 +70,8 @@ export default function FileDeleted() {
         <Logo />
       </div>
 
-      <div className="mx-auto flex min-h-screen w-[420px] max-w-full flex-col items-center justify-center gap-16 px-6 py-24">
-        <div className="flex flex-col items-center gap-6">
+      <div className="mx-auto flex min-h-screen w-[420px] max-w-full flex-col items-center px-6 pb-12 pt-24">
+        <div className="flex flex-1 flex-col items-center justify-center gap-6">
           <MissedFileArt />
           <div className="flex w-[380px] max-w-full flex-col items-center gap-2 text-center">
             <p className="text-lg font-medium leading-6 text-ink">File has been deleted</p>
