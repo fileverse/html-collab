@@ -86,7 +86,7 @@ export default function Landing() {
       }}
       onDrop={onDrop}
     >
-      <TopBar shareDisabled downloadDisabled showOpenSource showLogin={false} />
+      <TopBar shareDisabled downloadDisabled showOpenSource />
       <input ref={inputRef} type="file" accept={HTML_ACCEPT} className="hidden" onChange={onInputChange} />
 
       {/* note — visible only in this empty state (Figma) */}

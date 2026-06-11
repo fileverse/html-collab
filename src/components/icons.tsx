@@ -157,6 +157,21 @@ export function CopyIcon({ size = 16 }: { size?: number }) {
   )
 }
 
+/** Chain link (used on "Copy link"). */
+export function LinkIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M9 15l6-6M10.5 6.5l1-1a4 4 0 0 1 6 6l-1 1M13.5 17.5l-1 1a4 4 0 0 1-6-6l1-1"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 /** Up-right arrow out of a box (external link). */
 export function ExternalLinkIcon({ size = 14, className }: IconProps) {
   return (

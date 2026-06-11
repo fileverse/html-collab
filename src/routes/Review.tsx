@@ -5,6 +5,7 @@ import { cn } from '@/lib/cn'
 import Preview from '@/features/preview/Preview'
 import CommentDrawer from '@/features/comments/CommentDrawer'
 import VersionRail from '@/features/versions/VersionRail'
+import FileDeleted from '@/features/share/FileDeleted'
 import { useRemoteComments } from '@/features/comments/controllers'
 import { downloadFeedbackFile } from '@/features/export/exportDoc'
 import { fetchShare, fetchShareMeta, type VersionInfo } from '@/features/share/api'
@@ -91,7 +92,7 @@ export default function Review() {
   }
 
   if (phase === 'loading' || phase === 'opening') return <Centered>Loading…</Centered>
-  if (phase === 'notfound') return <Centered>This review link doesn’t exist or was removed.</Centered>
+  if (phase === 'notfound') return <FileDeleted />
   if (phase === 'error') return <Centered>Something went wrong loading this link.</Centered>
 
   if (phase === 'locked') {
@@ -106,20 +107,16 @@ export default function Review() {
         >
           <Logo size={48} />
           <h1 className="mt-5 text-xl font-medium text-ink">Password required</h1>
-          <p className="mt-1.5 text-sm text-muted">You need a password to access this file</p>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Your name"
-            className="mt-5 w-full rounded-lg border border-line p-3 text-sm text-ink outline-none placeholder:text-muted focus:border-ink/30"
-          />
+          <p className="mt-1.5 text-sm text-muted">
+            You need a password to access this collaborative HTML file!
+          </p>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             placeholder="Enter password"
             autoFocus
-            className="mt-2 w-full rounded-lg border border-line p-3 text-sm text-ink outline-none placeholder:text-muted focus:border-ink/30"
+            className="mt-5 w-full rounded-lg border border-line p-3 text-sm text-ink outline-none placeholder:text-muted focus:border-ink/30"
           />
           {gateError && <p className="mt-2 w-full text-left text-xs text-red-500">{gateError}</p>}
           <button

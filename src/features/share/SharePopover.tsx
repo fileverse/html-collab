@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { cn } from '@/lib/cn'
-import { CloseIcon } from '@/components/icons'
+import { CloseIcon, LinkIcon } from '@/components/icons'
 import { isSupabaseConfigured } from '@/lib/supabase'
 
 type Props = {
@@ -81,10 +81,10 @@ export default function SharePopover({
     <div className="w-[620px] max-w-[calc(100vw-2.5rem)] rounded-2xl border border-line bg-white p-4 shadow-[0px_8px_32px_0px_rgba(0,0,0,0.15)]">
       {/* header: Live pill + close */}
       <div className="flex items-start justify-between">
-        <span className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50/60 px-2 py-2 text-xs font-medium leading-4">
-          <span className="text-emerald-700">Live</span>
-          <span className="size-1.5 rounded-full bg-emerald-500" />
-          <span className="text-emerald-700">Accepting comments</span>
+        <span className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2 py-2 text-xs font-medium leading-4 text-[#177e23]">
+          Live
+          <span className="size-1.5 rounded-full bg-[#177e23]" />
+          Accepting comments
         </span>
         <button
           type="button"
@@ -121,12 +121,11 @@ export default function SharePopover({
                 onClick={copy}
                 disabled={!link}
                 className={cn(
-                  'shrink-0 rounded-lg px-3 py-1.5 text-sm font-medium transition',
-                  link
-                    ? 'bg-black text-white hover:bg-black/90'
-                    : 'cursor-not-allowed bg-line text-disabled',
+                  'flex shrink-0 items-center gap-2 rounded px-2 py-1 text-sm font-medium transition',
+                  link ? 'text-ink hover:bg-black/5' : 'cursor-not-allowed text-disabled',
                 )}
               >
+                <LinkIcon size={16} />
                 {copied ? 'Copied!' : 'Copy link'}
               </button>
             </div>

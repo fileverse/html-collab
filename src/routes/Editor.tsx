@@ -12,7 +12,7 @@ import { useLocalComments, useRemoteComments } from '@/features/comments/control
 import { useCommentStore } from '@/store/useCommentStore'
 import { useDocStore } from '@/store/useDocStore'
 import { useShareStore, type VersionMeta } from '@/store/useShareStore'
-import { copyReprompt, downloadFeedbackFile } from '@/features/export/exportDoc'
+import { copyComments, downloadFeedbackFile } from '@/features/export/exportDoc'
 import SharePopover, { ConfirmDialog } from '@/features/share/SharePopover'
 import {
   addVersion,
@@ -281,7 +281,6 @@ export default function Editor() {
         onDownload={() => downloadFeedbackFile(html, docId, comments)}
         onShare={() => setShareOpen((o) => !o)}
         shareOpen={shareOpen}
-        onUpload={() => navigate('/')}
         onLogoClick={() => navigate('/')}
       />
       {/* Version switcher lives in the left page margin, outside the canvas (Figma) */}
@@ -355,9 +354,9 @@ export default function Editor() {
           <div className="ml-auto flex items-center gap-1.5">
             <button
               type="button"
-              title="Copy the feedback as a re-prompt for your AI agent"
+              title="Copy in one click all comments on this HTML. Paste in your AI chatbot for re-prompting of the original HTML file."
               onClick={async () => {
-                if (await copyReprompt(comments)) {
+                if (await copyComments(comments, docId)) {
                   setCopied(true)
                   setTimeout(() => setCopied(false), 1500)
                 }

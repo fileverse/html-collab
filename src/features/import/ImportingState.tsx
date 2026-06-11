@@ -10,7 +10,7 @@ export default function ImportingState({
 }) {
   return (
     <div className="relative min-h-screen bg-dotgrid">
-      <TopBar shareDisabled downloadDisabled />
+      <TopBar shareDisabled downloadDisabled showOpenSource />
       <div className="grid min-h-screen place-items-center">
         <div className="flex flex-col items-center gap-4">
           {/* staggered skeleton (Figma) */}

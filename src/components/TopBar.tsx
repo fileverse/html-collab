@@ -1,15 +1,6 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
-import {
-  Logo,
-  UploadIcon,
-  CommentIcon,
-  ShareIcon,
-  DownloadIcon,
-  LoginIcon,
-  GitHubIcon,
-  ExternalLinkIcon,
-} from './icons'
+import { Logo, CommentIcon, ShareIcon, DownloadIcon, GitHubIcon, ExternalLinkIcon } from './icons'
 
 const REPO_URL = 'https://github.com/fileverse/ai-feedback-loop'
 
@@ -21,8 +12,6 @@ type TopBarProps = {
   /** Whether the comments drawer is currently open (highlights the toggle). */
   commentsOpen?: boolean
   onToggleComments?: () => void
-  /** Import / open a file. */
-  onUpload?: () => void
   /** Open the share popover; disabled until a doc exists. */
   onShare?: () => void
   shareOpen?: boolean
@@ -30,30 +19,23 @@ type TopBarProps = {
   /** Export with baked-in feedback; disabled until a doc exists. */
   onDownload?: () => void
   downloadDisabled?: boolean
-  /** Log in (no auth yet — inert placeholder to match the design). */
-  onLogin?: () => void
   /** Click the logo (e.g. start a new project / go home). */
   onLogoClick?: () => void
   /** Show the "Open source" GitHub pill at the start of the actions (Figma landing). */
   showOpenSource?: boolean
-  /** Show the login (→) button. Hidden on the landing per Figma. */
-  showLogin?: boolean
 }
 
 export default function TopBar({
   commentCount = 0,
   commentsOpen = false,
   onToggleComments,
-  onUpload,
   onShare,
   shareOpen = false,
   shareDisabled = false,
   onDownload,
   downloadDisabled = false,
-  onLogin,
   onLogoClick,
   showOpenSource = false,
-  showLogin = true,
 }: TopBarProps) {
   return (
     <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between p-6">
@@ -90,12 +72,6 @@ export default function TopBar({
           </>
         )}
 
-        {onUpload && (
-          <FloatBtn title="Upload" onClick={onUpload}>
-            <UploadIcon />
-          </FloatBtn>
-        )}
-
         <FloatBtn
           title="Comments"
           active={commentsOpen}
@@ -116,7 +92,7 @@ export default function TopBar({
         </Pill>
 
         <Pill
-          title="Download"
+          title="Download your HTML with all comments embedded directly in the same file. Ready to be shared with your AI chatbot."
           onClick={onDownload}
           disabled={downloadDisabled}
           disabledFilled
@@ -124,12 +100,6 @@ export default function TopBar({
           <DownloadIcon />
           Download
         </Pill>
-
-        {showLogin && (
-          <FloatBtn title="Log in" onClick={onLogin}>
-            <LoginIcon />
-          </FloatBtn>
-        )}
       </div>
     </header>
   )
