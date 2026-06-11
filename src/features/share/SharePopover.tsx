@@ -172,7 +172,7 @@ export default function SharePopover({
                     }}
                     placeholder="Enter password"
                     autoFocus
-                    className="w-full rounded-lg border border-line p-2.5 pr-9 text-sm text-ink outline-none placeholder:text-muted focus:border-ink/30"
+                    className="h-9 w-full rounded-lg border border-line px-3 pr-9 text-sm text-ink outline-none placeholder:text-muted focus:border-ink/30"
                   />
                   <button
                     type="button"
@@ -188,7 +188,7 @@ export default function SharePopover({
                   onClick={() => void save()}
                   disabled={!password.trim() || busy}
                   className={cn(
-                    'shrink-0 rounded-lg px-4 py-2.5 text-sm font-medium transition',
+                    'h-9 shrink-0 rounded-lg px-4 text-sm font-medium transition',
                     password.trim() && !busy
                       ? 'bg-black text-white hover:bg-black/90'
                       : 'cursor-not-allowed bg-line text-disabled',
