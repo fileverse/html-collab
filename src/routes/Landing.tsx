@@ -90,7 +90,7 @@ export default function Landing() {
       <input ref={inputRef} type="file" accept={HTML_ACCEPT} className="hidden" onChange={onInputChange} />
 
       {/* note — visible only in this empty state (Figma) */}
-      <div className="pointer-events-none absolute right-[150px] top-[80px] hidden items-end gap-2 lg:flex">
+      <div className="pointer-events-none absolute right-[72px] top-[76px] hidden items-end gap-2 lg:flex">
         <p className="pb-1 text-left text-xs leading-4 text-disabled">
           Once done collecting feedback,
           <br />
