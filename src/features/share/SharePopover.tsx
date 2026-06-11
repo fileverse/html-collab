@@ -98,7 +98,7 @@ export default function SharePopover({
 
       <p className="mt-4 text-sm font-medium leading-5 text-ink">{fileName} ready for review</p>
       <p className="mt-1 text-sm leading-5 text-muted">
-        Share the link below with anyone who should review this file.
+        Share the link below for others to add comments on this file.
       </p>
 
       {!isSupabaseConfigured ? (
