@@ -31,11 +31,11 @@ export default function HelpFab() {
               </div>
             ))}
 
-            <p className="px-2 pb-1 pt-3 text-xs text-muted">Try other products</p>
+            <p className="px-2 pb-1 pt-3 text-xs text-muted">Try other files</p>
             <MenuLink href="https://docs.fileverse.io" label="dDocs" icon={<DDocsLogo size={18} />} />
             <MenuLink href="https://sheets.fileverse.io" label="dSheets" icon={<DSheetsLogo size={18} />} />
 
-            <p className="px-2 pb-1 pt-3 text-xs text-muted">Legal</p>
+            <p className="px-2 pb-1 pt-3 text-xs text-muted">Other</p>
             <MenuLink
               href="https://github.com/fileverse/ai-feedback-loop"
               label="Open source"
