@@ -128,28 +128,10 @@ export function downloadFeedbackFile(html: string, fileName: string, comments: C
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-/** A clean, paste-ready list of all comments on the file. */
-export function buildCommentsText(comments: Comment[], fileName?: string): string {
-  if (comments.length === 0) return 'No comments on this HTML yet.'
-  const head = fileName
-    ? `Comments on ${fileName} (${comments.length})`
-    : `Comments (${comments.length})`
-  const lines: string[] = [head, '']
-  comments.forEach((c, i) => {
-    const quote = c.anchor.quote ? ` — "${c.anchor.quote}"` : ''
-    lines.push(
-      `${i + 1}. ${c.anchor.label}${quote}`,
-      `   ${c.body} — ${c.author}${c.resolved ? '  [resolved]' : ''}`,
-      '',
-    )
-  })
-  return lines.join('\n').trimEnd()
-}
-
-/** Copy all comments to the clipboard (paste into any AI chatbot to re-prompt). */
-export async function copyComments(comments: Comment[], fileName?: string): Promise<boolean> {
+/** Copy the re-prompt to the clipboard (paste into any AI chatbot to re-prompt). */
+export async function copyReprompt(comments: Comment[]): Promise<boolean> {
   try {
-    await navigator.clipboard.writeText(buildCommentsText(comments, fileName))
+    await navigator.clipboard.writeText(buildReprompt(comments))
     return true
   } catch {
     return false

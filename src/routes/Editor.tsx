@@ -12,7 +12,7 @@ import { useLocalComments, useRemoteComments } from '@/features/comments/control
 import { useCommentStore } from '@/store/useCommentStore'
 import { useDocStore } from '@/store/useDocStore'
 import { useShareStore, type VersionMeta } from '@/store/useShareStore'
-import { copyComments, downloadFeedbackFile } from '@/features/export/exportDoc'
+import { copyReprompt, downloadFeedbackFile } from '@/features/export/exportDoc'
 import SharePopover, { ConfirmDialog } from '@/features/share/SharePopover'
 import {
   addVersion,
@@ -356,7 +356,7 @@ export default function Editor() {
               type="button"
               title="Copy in one click all comments on this HTML. Paste in your AI chatbot for re-prompting of the original HTML file."
               onClick={async () => {
-                if (await copyComments(comments, docId)) {
+                if (await copyReprompt(comments)) {
                   setCopied(true)
                   setTimeout(() => setCopied(false), 1500)
                 }
