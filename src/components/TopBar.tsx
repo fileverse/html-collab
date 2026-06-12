@@ -38,7 +38,7 @@ export default function TopBar({
   showOpenSource = false,
 }: TopBarProps) {
   return (
-    <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between p-6">
+    <header className="pointer-events-none absolute inset-x-0 top-0 z-20 flex items-center justify-between p-4 sm:p-6">
       <div className="pointer-events-auto">
         {onLogoClick ? (
           <button type="button" onClick={onLogoClick} title="Start a new file" className="block">
@@ -50,8 +50,10 @@ export default function TopBar({
       </div>
 
       <div className="pointer-events-auto flex items-center gap-2">
+        {/* Secondary on mobile — also reachable from the "?" menu, so hide it
+            below sm to keep the action row from overflowing a phone width. */}
         {showOpenSource && (
-          <>
+          <div className="hidden items-center gap-2 sm:flex">
             <a
               href={REPO_URL}
               target="_blank"
@@ -69,7 +71,7 @@ export default function TopBar({
               </span>
             </a>
             <span className="mx-1 h-5 w-px bg-line" />
-          </>
+          </div>
         )}
 
         <FloatBtn

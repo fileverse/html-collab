@@ -109,11 +109,11 @@ export default function Landing() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-stretch justify-center gap-4 rounded-2xl border border-line bg-white p-4">
+        <div className="flex w-full flex-col gap-6 rounded-2xl border border-line bg-white p-4 lg:w-auto lg:flex-row lg:items-stretch lg:justify-center lg:gap-4">
           {STEPS.map((s, i) => (
-            <div key={s.n} className="flex items-stretch gap-4">
-              {i > 0 && <div className="w-px self-stretch bg-line" />}
-              <div className="flex w-[220px] flex-col gap-8">
+            <div key={s.n} className="flex w-full items-stretch gap-4 lg:w-auto">
+              {i > 0 && <div className="hidden w-px self-stretch bg-line lg:block" />}
+              <div className="flex w-full flex-col gap-8 lg:w-[220px]">
                 <span className="inline-flex h-8 w-fit items-center rounded-lg border border-line bg-surface px-2 text-xs font-medium text-ink">
                   {s.n}
                 </span>
