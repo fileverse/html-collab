@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "description": "Multiplayer comments for AI-generated HTML — import a file, comment on any element, share a review link, and export feedback baked in for re-prompting your AI agent.",
   "homepage": "https://html.fileverse.io",
-  "license": "MIT",
+  "license": "GPL-3.0-or-later",
   "type": "module",
   "engines": {
     "node": ">=20.19"

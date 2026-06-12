@@ -1,9 +1,13 @@
 # AI Feedback Loop
 
-**Multiplayer comments for AI‑generated HTML.** Import an `.html` file, leave
-feedback pinned to individual elements, share a review link (optionally
-password‑protected), iterate across up to 3 versions, then export the file with
-all feedback **baked in and ready to re‑prompt** your AI agent.
+> **Turn AI‑generated HTML into team‑approved HTML.**
+
+**[Live → html.fileverse.io](https://html.fileverse.io)** · open source (GPL‑3.0)
+
+Got an HTML page from an AI agent and want your team to weigh in? Drop the file
+in, click on anything to leave a comment, and share a link. When everyone’s
+feedback is in, export the page with all the notes baked in — ready to paste
+straight back to Claude, Cursor, ChatGPT, or Grok.
 
 ![Editor with anchored comments](docs/editor.png)
 
@@ -11,179 +15,85 @@ all feedback **baked in and ready to re‑prompt** your AI agent.
 
 ## Why
 
-When an AI generates an HTML page, giving precise feedback is painful — you
-can’t easily point at *“this button”* or *“that heading.”* This tool lets anyone
-drop comments **directly on elements**, anchored stably enough that the feedback
-maps back to the markup, so you can hand it straight back to the model.
-
-## The loop
-
-1. **Import** — drop an HTML file (or pick a sample). A public **share link is
-   created immediately** (password‑less by default) — no separate “create link”
-   step.
-2. **Comment** — click any element in the live preview to pin feedback to it
-   (works on bare text directly inside `<body>` too).
-3. **Share** — the share card is open by default with the live link; tick
-   **Password required** to set one, **Reset** to change it, untick to disable
-   (with a confirm).
-4. **Review** — anyone with the link (and password) adds comments on the live
-   preview. They land on the **latest version** and can switch to read older
-   ones.
-5. **Sync back** — a shared doc reads its comments from Supabase, so guest
-   feedback shows up in your editor (polled every ~10s; **Refresh** to pull now).
-6. **Re‑prompt** — **Copy re‑prompt** for a paste‑into‑chat summary, or
-   **Download** the HTML with all feedback baked in (from the editor **or** the
-   review link).
-7. **Iterate (versions)** — fix the feedback with your agent, then **Import new
-   version of this file** to add **v2** (up to 3). Each version is a fresh review
-   round with its own comments; switch between versions from the rail in the left
-   margin; delete a version (or the whole file) from the title‑pill trash.
-
-## Stack
-
-- **React 19** + **React Router 7** + **Zustand 5** (persisted to `localStorage`)
-- **Vite 8** + **TypeScript** (strict) + **Tailwind CSS 4**
-- **Supabase** (Postgres) for shared links — RLS‑locked, password‑gated RPCs
-- Node **20.19+**
-
----
-
-## Quick start
-
-```bash
-npm install
-cp .env.example .env.local   # then fill in the two values (see below)
-npm run dev                  # http://localhost:5173
-```
-
-`npm run build` type‑checks (`tsc --noEmit`) and produces a production bundle;
-`npm run preview` serves it.
-
-### Environment
-
-`.env.local` (git‑ignored) needs two **browser‑safe** values from Supabase →
-**Settings → API**:
-
-```ini
-VITE_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
-VITE_SUPABASE_ANON_KEY=sb_publishable_…   # the "publishable" key (new format)
-```
-
-> The app works fully **without** Supabase — import, comment and export are all
-> local. Only **Share / review links** require these keys.
-
-### Database schema
-
-The shared‑link schema lives in [`supabase/migrations/`](supabase/migrations/).
-Apply them once per project, **in order**, easiest via the Supabase **SQL
-Editor** (or `psql "$DATABASE_URL" -f <file>`):
-
-| File | What it adds |
-| --- | --- |
-| `0001_init.sql` | `shares` + `comments`, RLS‑locked, password‑gated RPCs |
-| `0002_fix_pgcrypto_schema.sql` | schema‑qualify pgcrypto (`extensions.*`) |
-| `0003_sync.sql` | `list_comments` + `delete_comment` for sync‑back |
-| `0004_password_and_delete.sql` | set/reset/disable password, delete share |
-| `0005_owner_token.sql` | secret **owner token**; gates destructive actions |
-| `0006_versions.sql` | `versions` table; comments move to `version_id`; add/delete/switch versions (max 3) |
-
-### Deploy (Vercel)
-
-It's a static Vite SPA, so deployment is just the build output:
-
-1. Import the repo into Vercel (framework preset: **Vite**, build `npm run build`,
-   output `dist`).
-2. Add the same env vars under **Settings → Environment Variables** — without
-   them, Share/Review won't work in production:
-   - `VITE_SUPABASE_URL`
-   - `VITE_SUPABASE_ANON_KEY`
-3. [`vercel.json`](vercel.json) rewrites all non‑file routes to `index.html` so
-   client routes (`/editor`, `/r/:id`) don't 404 on refresh. Static assets are
-   served from the filesystem first, so they're unaffected.
-
----
+Giving feedback on an AI‑generated page is awkward. You end up writing things
+like *“make the button under the heading a bit bigger”* and hoping the model
+guesses which button. This tool lets anyone point **right at** an element and
+leave a note there — so the feedback is unambiguous, and you can hand it back to
+the AI without re‑explaining.
 
 ## How it works
 
-### Anchoring engine (the core)
-
-The previewed HTML runs inside a **sandboxed iframe** (`allow-scripts`, **not**
-`allow-same-origin`) so untrusted markup can’t touch the host app. A small agent
-([`features/preview/agent.js`](src/features/preview/agent.js)) is injected into
-the iframe and talks to the host only via `postMessage`. When you click an
-element it captures a 3‑layer anchor — **`elementId` → `nth-of-type` selector →
-text quote** — so a pin survives edits and can re‑resolve onto a re‑imported v2
-of the file. The host maps reported element rects to an absolute pin overlay.
-
-### Versions (review rounds)
-
-A share is a **project holding 1–3 versions**. Each version is an immutable
-snapshot with **its own HTML and its own comments** — so uploading v2 starts a
-clean review round after v1’s feedback was applied. The link is stable;
-reviewers see the latest version and can switch to read older ones (read‑only).
-Deleting a version renumbers the rest; deleting the last one tears down the
-whole share. Schema: a `versions` table, with `comments` referencing
-`version_id`; `get_share(…, version_no)`, `add_version`, `delete_version`.
+1. **Import** — drop in an `.html` file (or try a sample). A shareable link is
+   ready right away.
+2. **Comment** — click anything in the preview to pin a note to it.
+3. **Share** — send the link. Add a password if the review should be private.
+4. **Review** — anyone with the link opens the same page and adds their comments.
+5. **See it come back** — their feedback shows up next to yours, automatically.
+6. **Re‑prompt** — **Copy comments** to paste the whole feedback summary into
+   your AI chat, or **Download** the page with every note baked in.
+7. **Iterate** — once the AI fixes things, import the new version. Each file
+   keeps up to **3 versions**, and every version has its own round of comments.
 
 ![Switching between versions, each its own review round](docs/versions.png)
 
-### Sharing & security (password + owner token)
-
-- Tables `shares`, `versions`, `comments` have **RLS enabled with no policies**,
-  so the publishable key has **zero direct table access**.
-- All reads/writes go through **`SECURITY DEFINER` RPCs**. Reads are **password‑
-  gated**; passwords are **bcrypt‑hashed** with pgcrypto and never leave the DB.
-- Because shares are auto‑created (often password‑less), destructive actions
-  can’t rely on the password — anyone with the link would pass. So `create_share`
-  returns a secret **owner token** (kept in the owner’s `localStorage`), and
-  `set_share_password` / `delete_version` require it. Max‑3 versions is enforced
-  server‑side too.
-- If the persisted share ever goes missing server‑side (e.g. the DB was wiped),
-  the editor detects it via `share_meta` and **re‑creates a fresh share** on the
-  next open, so a stale `localStorage` id can’t leave you broken.
+Reviews can be locked behind a password, and if a shared file gets deleted,
+anyone opening the old link sees a friendly “this file is gone” page.
 
 ![Password gate](docs/password-gate.png)
 
-### Export (built for agent pickup)
+---
 
-[`features/export/exportDoc.ts`](src/features/export/exportDoc.ts) bakes the
-feedback into the downloaded HTML three reinforcing ways: a top‑of‑`<head>`
-**re‑prompt directive** (open comments, each with element label · selector ·
-quote · author), **inline `data-feedback` attributes** on the targeted elements
-(so an agentic editor sees the ask where it edits), and a
-`<script type="application/json">` **snapshot** of all comments for re‑import.
-**Copy re‑prompt** puts the same summary on the clipboard for a chat paste.
+## Run it locally
 
-## Project structure
-
-```
-src/
-  routes/        Landing · Editor · Review (public viewer)
-  features/
-    preview/     sandboxed iframe + anchoring agent
-    comments/    drawer, comment card, composer, avatar, controllers
-    import/      file read + "Reading HTML file" state
-    export/      bake feedback into the HTML file
-    share/       supabase RPC wrappers + share popover
-    versions/    version rail (left-margin switcher)
-  store/         zustand stores (doc · comments · shares, persisted)
-  components/    TopBar, icons (Figma SVGs)
-  lib/           supabase client, cn()
-supabase/migrations/   shares/versions/comments schema + RPCs
+```bash
+npm install
+cp .env.example .env.local   # add your two Supabase values (see below)
+npm run dev                  # http://localhost:5173
 ```
 
-## Known limitations (it’s a POC)
+You can import, comment, and export **without any setup** — that all runs in your
+browser. Sharing review links is the only part that needs a database.
 
-- One project per browser at a time (the active doc is kept in `localStorage`).
-  Each **version** is a one‑time markup snapshot — editing the file after upload
-  won’t update that version; import a new version instead. Comments sync both
-  ways.
-- Up to **3 versions** per share; importing a 4th is blocked until you delete one.
-- Reviewers are anonymous (name only); no accounts. Ownership is proven by a
-  secret **owner token** in the owner’s `localStorage` (lose it and you can’t
-  manage the share remotely).
-- Sync is **polled** (~10s), not realtime; Supabase Realtime would make it live.
+For sharing, add two browser‑safe values from your Supabase project
+(**Settings → API**) to `.env.local`:
+
+```ini
+VITE_SUPABASE_URL=https://YOUR-PROJECT.supabase.co
+VITE_SUPABASE_ANON_KEY=sb_publishable_…
+```
+
+Then set up the database tables by running the SQL files in
+[`supabase/migrations/`](supabase/migrations/) once, in order, from the Supabase
+SQL Editor.
+
+## Deploy
+
+It’s a plain static site, so it deploys anywhere (the live version runs on
+Vercel at **[html.fileverse.io](https://html.fileverse.io)**). Point your host at
+`npm run build`, serve the `dist/` folder, and add the same two Supabase values
+as environment variables.
+
+---
+
+## Under the hood
+
+A few notes for the curious:
+
+- **Pins that stick** — your imported page renders in a locked‑down sandbox, and
+  each comment is anchored to the element you clicked so it stays put even after
+  the AI rewrites the page for the next version.
+- **Private by design** — the database can’t be read directly; everything goes
+  through guarded access points. Passwords are hashed and never leave the server,
+  and only the file’s owner can rename, reset the password, or delete it.
+- **Built with** React, Vite, Tailwind CSS, and Supabase — all open source.
+
+## Good to know
+
+- It’s a focused proof of concept: one project per browser at a time, up to 3
+  versions per file.
+- Reviewers are anonymous (name only) — no accounts to create.
+- Feedback syncs every few seconds rather than instantly.
 
 ## License
 
-[MIT](LICENSE) © Fileverse
+[GNU GPL v3](LICENSE) © Fileverse
