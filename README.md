@@ -84,7 +84,7 @@ A few notes for the curious:
   the AI rewrites the page for the next version.
 - **Private by design** — the database can’t be read directly; everything goes
   through guarded access points. Passwords are hashed and never leave the server,
-  and only the file’s owner can rename, reset the password, or delete it.
+  and only the file’s owner can change the password or delete it.
 - **Built with** React, Vite, Tailwind CSS, and Supabase — all open source.
 
 ## Good to know
