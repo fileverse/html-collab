@@ -76,10 +76,9 @@ export default function FileDeleted() {
           <div className="flex w-[380px] max-w-full flex-col items-center gap-2 text-center">
             <p className="text-lg font-medium leading-6 text-ink">File has been deleted</p>
             <p className="text-sm leading-5 text-muted">
-              Try to reach out to the owner of this html for more information. Try your own
-              collaborative{' '}
+              Try to reach out to the owner of this html for more information.{' '}
               <Link to="/" className="text-link hover:underline">
-                HTML session
+                Try your own collaborative HTML session
               </Link>
               !
             </p>

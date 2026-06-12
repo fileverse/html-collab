@@ -102,10 +102,10 @@ export default function Landing() {
       <main className="mx-auto flex min-h-screen w-[1011px] max-w-full flex-col items-center justify-center gap-10 px-6 py-24">
         <div className="flex flex-col items-center gap-2 text-center">
           <h1 className="text-2xl font-medium leading-8 text-ink">
-            Struggling with feedback for your AI agent's HTML?
+            Turn AI-generated HTML into team-approved HTML
           </h1>
           <p className="text-sm leading-5 text-muted">
-            Try our 1-click multiplayer collaboration for HTML files!
+            Multiplayer collaboration on HTML files – comment, share, and iterate live.
           </p>
         </div>
 
