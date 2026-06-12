@@ -58,7 +58,18 @@ export default function Preview({
   const [contentWidth, setContentWidth] = useState(0)
   const [hoveredId, setHoveredId] = useState<string | null>(null)
 
+  // Once we decide a doc is a genuinely-wide fixed layout we lock its design
+  // width here and stop chasing the measurement (see the fit logic below). A ref
+  // rather than state so writing it never itself triggers another measure.
+  const designWidthRef = useRef(0)
+
   const srcDoc = useMemo(() => buildSrcDoc(html), [html])
+
+  // New document → forget any locked design width and re-measure from scratch.
+  useEffect(() => {
+    designWidthRef.current = 0
+    setContentWidth(0)
+  }, [srcDoc])
 
   const send = useCallback((msg: HostMessage) => {
     iframeRef.current?.contentWindow?.postMessage(msg, '*')
@@ -144,16 +155,24 @@ export default function Preview({
     return () => ro.disconnect()
   }, [])
 
-  // Render the doc at a fixed desktop width and scale it to fit the surface, so
-  // wide templates aren't cramped/clipped. Coordinates from the (1280-wide)
-  // iframe are multiplied by `scale` to place pins/composer on the overlay.
   // Adaptive fit: render responsive pages at the surface width (1:1), but scale
-  // wide fixed-layout docs (e.g. 1920-wide slide decks) down so they aren't
-  // cramped. `contentWidth` is the doc's natural width, measured inside the
-  // iframe; if it overflows the surface we treat that as the design width.
+  // genuinely-wide fixed-layout docs (e.g. 1920-wide slide decks) down so they
+  // aren't cramped. Coordinates from the iframe are multiplied by `scale` to
+  // place pins/composer on the overlay.
+  //
+  // The catch: a page can overflow its OWN viewport by a constant amount no
+  // matter how wide we make it — a decorative blob at `right:-110px`, a negative
+  // margin, `width:100vw` inside padding. If we just widened the iframe to that
+  // measured `contentWidth`, the page would overflow again, we'd widen again,
+  // and the preview would shrink forever. So we only treat a doc as "wide" when
+  // its content clearly exceeds the surface (15%+), and we lock that design
+  // width once — after which later (larger) measurements are ignored.
   const measured = size.w > 0 && size.h > 0
-  const logicalWidth = measured && contentWidth > size.w + 8 ? contentWidth : size.w || 1280
-  const scale = measured ? size.w / logicalWidth : 1
+  if (measured && designWidthRef.current === 0 && contentWidth > size.w * 1.15) {
+    designWidthRef.current = contentWidth
+  }
+  const logicalWidth = designWidthRef.current || size.w || 1280
+  const scale = measured ? Math.min(1, size.w / logicalWidth) : 1
 
   function pinPoint(rect: Rect, offset: { x: number; y: number }) {
     return { left: (rect.x + rect.w * offset.x) * scale, top: (rect.y + rect.h * offset.y) * scale }
