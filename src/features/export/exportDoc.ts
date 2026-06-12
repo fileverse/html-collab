@@ -103,8 +103,12 @@ export function buildExportHtml(html: string, comments: Comment[], fileName: str
   else if (/<html[^>]*>/i.test(out)) out = out.replace(/(<html[^>]*>)/i, `$1\n${topBlock}`)
   else out = `${topBlock}\n${out}`
 
-  if (/<\/body>/i.test(out)) out = out.replace(/<\/body>/i, `${jsonBlock}\n</body>`)
-  else out = `${out}\n${jsonBlock}\n`
+  // Splice before the LAST </body> (the document's own): a page may embed an
+  // earlier </body> inside an <iframe srcdoc="…">, and baking the snapshot into
+  // that nested frame would hide it from re-import.
+  const lastBody = out.toLowerCase().lastIndexOf('</body>')
+  if (lastBody === -1) out = `${out}\n${jsonBlock}\n`
+  else out = out.slice(0, lastBody) + `${jsonBlock}\n` + out.slice(lastBody)
 
   return out
 }

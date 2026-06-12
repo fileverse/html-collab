@@ -8,12 +8,20 @@ import { formatTime } from '@/features/comments/format'
 import { CloseIcon, ResolveIcon, TrashIcon, VerifiedBadge } from '@/components/icons'
 import type { AgentMessage, Anchor, HostMessage, PreviewMode, Rect } from './types'
 
-/** Inject the agent script into arbitrary user HTML, just before </body>. */
+/**
+ * Inject the agent script into arbitrary user HTML, just before the document's
+ * own closing tag. We splice at the LAST </body> (not the first): a page can
+ * embed earlier </body> tags inside an <iframe srcdoc="…"> or an HTML example,
+ * and injecting into one of those leaves the top frame with no agent — so
+ * hovering/commenting silently dies even though the page renders fine.
+ */
 function buildSrcDoc(html: string): string {
   const tag = `<script>${agentRaw}</script>`
-  if (/<\/body>/i.test(html)) return html.replace(/<\/body>/i, `${tag}</body>`)
-  if (/<\/html>/i.test(html)) return html.replace(/<\/html>/i, `${tag}</html>`)
-  return html + tag
+  const spliceBeforeLast = (close: string): string | null => {
+    const i = html.toLowerCase().lastIndexOf(close)
+    return i === -1 ? null : html.slice(0, i) + tag + html.slice(i)
+  }
+  return spliceBeforeLast('</body>') ?? spliceBeforeLast('</html>') ?? html + tag
 }
 
 type Draft = { anchor: Anchor; offset: { x: number; y: number }; rect: Rect }
