@@ -186,4 +186,4 @@ supabase/migrations/   shares/versions/comments schema + RPCs
 
 ## License
 
-Open source.
+[MIT](LICENSE) © Fileverse

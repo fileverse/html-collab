@@ -5,14 +5,82 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" type="image/png" href="/brand/fileverse-logo.png" />
     <link rel="apple-touch-icon" href="/brand/fileverse-logo.png" />
+    <meta name="theme-color" content="#ffdf0a" />
+
     <title>AI Feedback Loop — multiplayer comments for AI-generated HTML</title>
     <meta
       name="description"
-      content="Import an HTML file, leave comments anchored to elements, share a password-protected review link, and export feedback baked in for re-prompting."
+      content="Import any HTML file, leave comments anchored to individual elements, share a password-protected review link, then export the file with all feedback baked in — ready to re-prompt your AI agent (Claude, Cursor, ChatGPT)."
     />
+    <link rel="canonical" href="https://html.fileverse.io/" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="author" content="Fileverse" />
+    <meta
+      name="keywords"
+      content="AI feedback, HTML review, comment on HTML, re-prompt AI, multiplayer comments, AI-generated HTML, Claude, Cursor, ChatGPT, design feedback, collaborative review"
+    />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="AI Feedback Loop" />
+    <meta property="og:title" content="AI Feedback Loop — multiplayer comments for AI-generated HTML" />
+    <meta
+      property="og:description"
+      content="Comment directly on any HTML page, share a review link, and export feedback baked in for re-prompting your AI agent. One-click multiplayer collaboration for HTML files."
+    />
+    <meta property="og:url" content="https://html.fileverse.io/" />
+    <meta property="og:image" content="https://html.fileverse.io/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="AI Feedback Loop — comment on AI-generated HTML, then re-prompt." />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="AI Feedback Loop — multiplayer comments for AI-generated HTML" />
+    <meta
+      name="twitter:description"
+      content="Comment directly on any HTML page, share a review link, and export feedback baked in for re-prompting your AI agent."
+    />
+    <meta name="twitter:image" content="https://html.fileverse.io/og.png" />
+
+    <!-- Structured data (helps search + AI answer engines understand the product) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "AI Feedback Loop",
+        "url": "https://html.fileverse.io/",
+        "description": "Import an HTML file, leave comments anchored to individual elements, share a password-protected review link, then export the file with all feedback baked in for re-prompting an AI agent.",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Web",
+        "browserRequirements": "Requires JavaScript",
+        "isAccessibleForFree": true,
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "featureList": [
+          "Comment on individual elements of any HTML page",
+          "Password-protected public review links",
+          "Comments sync back from reviewers",
+          "Up to 3 versions per file with per-version feedback",
+          "Export HTML with feedback embedded for re-prompting AI agents"
+        ],
+        "creator": { "@type": "Organization", "name": "Fileverse", "url": "https://fileverse.io" }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <div style="max-width: 640px; margin: 64px auto; padding: 0 24px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #363b3f">
+        <h1>AI Feedback Loop</h1>
+        <p>
+          Multiplayer comments for AI-generated HTML. Import any <code>.html</code> file, leave
+          feedback anchored to individual elements, share a password-protected review link, then
+          export the file with all comments baked in — ready to re-prompt your AI agent.
+        </p>
+        <p>This app needs JavaScript enabled. Source: <a href="https://github.com/fileverse/ai-feedback-loop">github.com/fileverse/ai-feedback-loop</a>.</p>
+      </div>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

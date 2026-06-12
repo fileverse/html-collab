@@ -1,0 +1,11 @@
+# AI Feedback Loop — https://html.fileverse.io
+# Public landing is open to all crawlers (incl. AI answer engines: GPTBot,
+# ClaudeBot, PerplexityBot, Google-Extended …). Private review links and the
+# app shell are not indexable.
+
+User-agent: *
+Allow: /
+Disallow: /r/
+Disallow: /editor
+
+Sitemap: https://html.fileverse.io/sitemap.xml

@@ -1,0 +1,23 @@
+# AI Feedback Loop
+
+> Multiplayer comments for AI-generated HTML. Import an HTML file, leave feedback anchored to individual elements, share a password-protected review link, then export the file with all feedback baked in — ready to re-prompt your AI agent (Claude, Cursor, ChatGPT).
+
+AI Feedback Loop is a free, open-source web app by Fileverse for collecting precise feedback on AI-generated HTML and feeding it back to the model.
+
+## How it works
+
+- **Import** any `.html` file (drag & drop or file picker).
+- **Comment** — click any element in the live preview to pin feedback anchored to it.
+- **Share** a public review link, optionally password-protected; reviewers comment directly on the preview and their feedback syncs back to you.
+- **Iterate** across up to 3 versions, each a fresh review round with its own comments.
+- **Re-prompt** — export the HTML with feedback baked in (a top-of-file directive, inline `data-feedback` attributes on each target element, and a JSON snapshot), or copy a re-prompt and paste it into any AI chatbot to apply the changes.
+
+## Why it exists
+
+Giving an AI precise feedback on a generated page is hard — you can't easily say "this button" or "that heading". This tool lets anyone drop comments directly on elements, anchored stably to the markup, so the feedback maps straight back for re-prompting.
+
+## Links
+
+- App: https://html.fileverse.io/
+- Source code (open source): https://github.com/fileverse/ai-feedback-loop
+- Fileverse: https://fileverse.io
