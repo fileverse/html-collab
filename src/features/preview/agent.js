@@ -14,6 +14,8 @@
   var tracked = [] // [{ id, selector, elementId, quote }]
   var lastX = 0
   var lastY = 0
+  var lastMod = false // ⌘/Ctrl held — inverts the current mode for one action
+  var hoverActive = false // whether a hover ring is currently shown on the host
   var hoverPending = false
   var reportPending = false
 
@@ -163,7 +165,16 @@
     var out = []
     for (var i = 0; i < tracked.length; i++) {
       var el = resolve(tracked[i])
-      out.push({ id: tracked[i].id, rect: el ? rectOf(el) : null })
+      var rect = null
+      if (el) {
+        var r = rectOf(el)
+        // Hidden elements (an off-screen state in an interactive page, a
+        // display:none tab) measure 0×0 — report null so the pin doesn't pile
+        // up at the canvas origin. It reappears when the page returns to that
+        // state and the element is laid out again.
+        if (r.w > 0 || r.h > 0) rect = r
+      }
+      out.push({ id: tracked[i].id, rect: rect })
     }
     post({ type: 'rects', rects: out })
   }
@@ -208,36 +219,85 @@
     }, 1000)
   }
 
+  // Whether *this* action should place a comment: the toggle's mode, inverted
+  // while ⌘/Ctrl is held. So you can comment without leaving Browse (and click
+  // through without leaving Comment) — a one-off shortcut on top of the toggle.
+  function commenting(mod) {
+    return (mode === 'comment') !== !!mod
+  }
+
+  function refreshCursor() {
+    if (document.body) document.body.style.cursor = commenting(lastMod) ? 'crosshair' : ''
+  }
+
   function setMode(m) {
     mode = m
-    if (document.body) document.body.style.cursor = m === 'comment' ? 'crosshair' : ''
-    if (m !== 'comment') post({ type: 'hover', rect: null, label: null })
+    refreshCursor()
+    updateHover()
   }
 
   // ---- input ----------------------------------------------------------------
+
+  function updateHover() {
+    if (hoverPending) return
+    hoverPending = true
+    requestAnimationFrame(function () {
+      hoverPending = false
+      refreshCursor()
+      var rect = null
+      var label = null
+      if (commenting(lastMod)) {
+        var el = targetAt(lastX, lastY)
+        if (el === document.body) {
+          var tr = textRectAt(lastX, lastY) // only over real text, not empty margins
+          if (tr) {
+            rect = tr
+            label = 'text'
+          }
+        } else if (el) {
+          rect = rectOf(el)
+          label = labelFor(el)
+        }
+      }
+      if (rect) {
+        post({ type: 'hover', rect: rect, label: label })
+        hoverActive = true
+      } else if (hoverActive) {
+        post({ type: 'hover', rect: null, label: null })
+        hoverActive = false
+      }
+    })
+  }
 
   document.addEventListener(
     'mousemove',
     function (e) {
       lastX = e.clientX
       lastY = e.clientY
-      if (mode !== 'comment' || hoverPending) return
-      hoverPending = true
-      requestAnimationFrame(function () {
-        hoverPending = false
-        var el = targetAt(lastX, lastY)
-        if (!el) {
-          post({ type: 'hover', rect: null, label: null })
-          return
-        }
-        if (el === document.body) {
-          // only react over actual text — empty margins stay clean
-          var tr = textRectAt(lastX, lastY)
-          post(tr ? { type: 'hover', rect: tr, label: 'text' } : { type: 'hover', rect: null, label: null })
-          return
-        }
-        post({ type: 'hover', rect: rectOf(el), label: labelFor(el) })
-      })
+      lastMod = e.metaKey || e.ctrlKey
+      updateHover()
+    },
+    true,
+  )
+
+  // Holding/releasing ⌘/Ctrl flips the affordance even without moving the mouse.
+  document.addEventListener(
+    'keydown',
+    function (e) {
+      if (e.key === 'Meta' || e.key === 'Control') {
+        lastMod = true
+        updateHover()
+      }
+    },
+    true,
+  )
+  document.addEventListener(
+    'keyup',
+    function (e) {
+      if (e.key === 'Meta' || e.key === 'Control') {
+        lastMod = false
+        updateHover()
+      }
     },
     true,
   )
@@ -245,7 +305,29 @@
   document.addEventListener(
     'click',
     function (e) {
-      if (mode !== 'comment') return
+      if (!commenting(e.metaKey || e.ctrlKey)) {
+        // Interacting (Browse, or Comment + ⌘/Ctrl). This preview is a srcdoc
+        // iframe with no base URL, so a plain link (<a href="#">, a relative
+        // path) would navigate the frame to a blank page. Neutralize that:
+        // in-page/relative links do nothing, external links open in a new tab.
+        // The page's own onclick handlers still run (we don't stop propagation),
+        // so SPA navigation keeps working.
+        var link = e.target && e.target.closest ? e.target.closest('a[href]') : null
+        if (link) {
+          var raw = (link.getAttribute('href') || '').trim()
+          if (raw.slice(0, 11).toLowerCase() !== 'javascript:') {
+            e.preventDefault()
+            if (/^(https?:)?\/\//i.test(raw) || /^(mailto:|tel:)/i.test(raw)) {
+              try {
+                window.open(link.href, '_blank', 'noopener,noreferrer')
+              } catch (e2) {
+                /* popups blocked — better than blanking the preview */
+              }
+            }
+          }
+        }
+        return
+      }
       var el = targetAt(e.clientX, e.clientY)
       if (!el) return
       // on bare <body>, only anchor where there's real text (skip empty space)
@@ -274,6 +356,32 @@
   if (window.ResizeObserver) {
     try {
       new ResizeObserver(scheduleReport).observe(document.documentElement)
+    } catch (e) {
+      /* ignore */
+    }
+  }
+
+  // Re-measure when the page mutates itself — an SPA swapping "pages" via
+  // display/class toggles, lazy content, an element that appears after a click.
+  // Without this a pin left on a child screen wouldn't reappear when the page
+  // navigates back to it. Debounced so animation-heavy pages don't report
+  // every frame.
+  var mutTimer = null
+  function scheduleReportSoon() {
+    if (mutTimer) return
+    mutTimer = setTimeout(function () {
+      mutTimer = null
+      reportRects()
+    }, 200)
+  }
+  if (window.MutationObserver && document.documentElement) {
+    try {
+      new MutationObserver(scheduleReportSoon).observe(document.documentElement, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+        attributeFilter: ['style', 'class', 'hidden'],
+      })
     } catch (e) {
       /* ignore */
     }

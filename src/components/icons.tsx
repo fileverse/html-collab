@@ -49,6 +49,14 @@ export function CommentIcon({ size = 16 }: { size?: number }) {
   )
 }
 
+export function CursorIcon({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+      <path d="M3.5 1.4a.6.6 0 0 1 .95-.48l9 6.6a.6.6 0 0 1-.25 1.07l-3.83.66 2.18 4.45a.6.6 0 0 1-.27.8l-1.38.68a.6.6 0 0 1-.8-.28L6.9 10.43l-2.86 2.7A.6.6 0 0 1 3 12.7z" />
+    </svg>
+  )
+}
+
 export function ShareIcon({ size = 16 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 13.3333 14.6667" fill="none" aria-hidden="true">

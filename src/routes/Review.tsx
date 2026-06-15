@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom'
 import { CommentIcon, DownloadIcon, Logo } from '@/components/icons'
 import { cn } from '@/lib/cn'
 import Preview from '@/features/preview/Preview'
+import ModeToggle, { type CanvasMode } from '@/components/ModeToggle'
 import CommentDrawer from '@/features/comments/CommentDrawer'
 import VersionRail from '@/features/versions/VersionRail'
 import FileDeleted from '@/features/share/FileDeleted'
@@ -22,6 +23,7 @@ export default function Review() {
   const [html, setHtml] = useState<string | null>(null)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(true)
+  const [canvasMode, setCanvasMode] = useState<CanvasMode>('comment')
   const [versions, setVersions] = useState<VersionInfo[]>([])
   const [activeVersion, setActiveVersion] = useState(1)
 
@@ -199,13 +201,14 @@ export default function Review() {
       <div className="mx-auto flex h-screen max-w-7xl flex-col px-6 pb-6 pt-[72px]">
         <div className="relative flex flex-1 overflow-hidden">
           <div className="relative min-w-0 flex-1 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            {html && isLatest && <ModeToggle mode={canvasMode} onChange={setCanvasMode} />}
             {html && (
               <Preview
                 key={`${shareId}:v${activeVersion}`}
                 html={html}
                 comments={ctrl.comments}
                 activeId={activeId}
-                mode={isLatest ? 'comment' : 'view'}
+                mode={isLatest && canvasMode === 'comment' ? 'comment' : 'view'}
                 onSelect={setActiveId}
                 onCreate={async (draft) => {
                   const c = await ctrl.add(draft)

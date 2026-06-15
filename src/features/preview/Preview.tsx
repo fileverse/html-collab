@@ -218,8 +218,10 @@ export default function Preview({
           only the pins + composer opt back in. */}
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         {/* click-outside backdrop: while a comment is focused, a click anywhere
-            off the popover/markers dismisses it (markers + popover sit above). */}
-        {activeId && !draft && (
+            off the popover/markers dismisses it (markers + popover sit above).
+            Comment mode only — in browse mode the page stays clickable and the
+            popover is closed via its own ✕. */}
+        {mode === 'comment' && activeId && !draft && (
           <button
             type="button"
             aria-label="Close comment"
@@ -227,7 +229,9 @@ export default function Preview({
             className="pointer-events-auto absolute inset-0 cursor-default"
           />
         )}
-        {mode === 'comment' && hover && !draft && (
+        {/* The agent only emits a hover rect when the *effective* action is a
+            comment (mode, inverted by ⌘/Ctrl), so this isn't gated on mode. */}
+        {hover && !draft && (
           <div
             className="absolute rounded-[4px] bg-brand/[0.08] ring-2 ring-brand/60"
             style={{

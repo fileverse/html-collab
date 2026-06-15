@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom'
 import TopBar from '@/components/TopBar'
 import HelpFab from '@/components/HelpFab'
+import ModeToggle, { type CanvasMode } from '@/components/ModeToggle'
 import { CopyIcon, ResolveIcon, TrashFillIcon, UploadIcon } from '@/components/icons'
 import Preview from '@/features/preview/Preview'
 import CommentDrawer from '@/features/comments/CommentDrawer'
@@ -71,6 +72,7 @@ export default function Editor() {
 
   const [drawerOpen, setDrawerOpen] = useState(false)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [canvasMode, setCanvasMode] = useState<CanvasMode>('comment')
   // Figma: the share card is open by default right after import.
   const [shareOpen, setShareOpen] = useState(true)
   const [copied, setCopied] = useState(false)
@@ -403,12 +405,13 @@ export default function Editor() {
         </div>
         <div className="relative flex flex-1 overflow-hidden">
           <div className="relative min-w-0 flex-1 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm">
+            {isLatest && <ModeToggle mode={canvasMode} onChange={setCanvasMode} />}
             <Preview
               key={`${docId}:v${activeVersion}`}
               html={html}
               comments={comments}
               activeId={activeId}
-              mode={isLatest ? 'comment' : 'view'}
+              mode={isLatest && canvasMode === 'comment' ? 'comment' : 'view'}
               onSelect={setActiveId}
               onResolve={isLatest ? ctrl.resolve : undefined}
               onDelete={
