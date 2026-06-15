@@ -17,6 +17,12 @@ export type CommentsController = {
   /** Owner-only; undefined hides the controls (e.g. public viewer). */
   resolve?: (id: string) => void
   remove?: (id: string) => void
+  /**
+   * Delete scoping: returns true if THIS client authored the comment, so an
+   * anonymous viewer can delete their own. Undefined = no scoping (the owner may
+   * delete every comment).
+   */
+  ownsComment?: (id: string) => boolean
   /** Remote-only; re-pulls from the server (manual sync). */
   refresh?: () => void
 }
@@ -61,6 +67,39 @@ export function useRemoteComments(
   const authorRef = useRef(opts.author)
   authorRef.current = opts.author
 
+  // Comments this client authored, so an anonymous viewer can delete their own.
+  // (The server's delete is password-gated; the per-author scoping is ours.)
+  // Persisted per share so it survives a reload.
+  const [mine, setMine] = useState<Set<string>>(() => new Set())
+  const mineRef = useRef(mine)
+  mineRef.current = mine
+  useEffect(() => {
+    if (!shareId) return setMine(new Set())
+    try {
+      const raw = localStorage.getItem(`aifl:authored:${shareId}`)
+      setMine(new Set(raw ? (JSON.parse(raw) as string[]) : []))
+    } catch {
+      setMine(new Set())
+    }
+  }, [shareId])
+  const rememberMine = useCallback(
+    (id: string) => {
+      setMine((prev) => {
+        if (prev.has(id)) return prev
+        const next = new Set(prev).add(id)
+        if (shareId) {
+          try {
+            localStorage.setItem(`aifl:authored:${shareId}`, JSON.stringify([...next]))
+          } catch {
+            /* storage disabled/full — the in-memory set still works this session */
+          }
+        }
+        return next
+      })
+    },
+    [shareId],
+  )
+
   const refresh = useCallback(async () => {
     if (!shareId) return
     try {
@@ -101,13 +140,14 @@ export function useRemoteComments(
           body: draft.body,
         })
         const c = toComment(sc)
+        rememberMine(c.id)
         setComments((prev) => (prev.some((x) => x.id === c.id) ? prev : [...prev, c].sort(byCreatedAt)))
         return c
       } catch {
         return null
       }
     },
-    [shareId, password, versionNo],
+    [shareId, password, versionNo, rememberMine],
   )
 
   const resolve = useCallback(
@@ -129,10 +169,12 @@ export function useRemoteComments(
   const remove = useCallback(
     (id: string) => {
       if (!shareId) return
+      // owner may delete any comment; a viewer only their own
+      if (!opts.owner && !mineRef.current.has(id)) return
       setComments((prev) => prev.filter((c) => c.id !== id))
       deleteShareComment(shareId, password, id).catch(() => refresh())
     },
-    [shareId, password, refresh],
+    [shareId, password, refresh, opts.owner],
   )
 
   return {
@@ -141,7 +183,8 @@ export function useRemoteComments(
     loading,
     add,
     resolve: opts.owner ? resolve : undefined,
-    remove: opts.owner ? remove : undefined,
+    remove,
+    ownsComment: opts.owner ? undefined : (id: string) => mine.has(id),
     refresh,
   }
 }

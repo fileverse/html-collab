@@ -211,6 +211,8 @@ export default function Review() {
                   const c = await ctrl.add(draft)
                   if (c) setActiveId(c.id)
                 }}
+                onDelete={ctrl.remove}
+                canDelete={ctrl.ownsComment}
               />
             )}
             {!isLatest && (
@@ -226,6 +228,8 @@ export default function Review() {
                 activeId={activeId}
                 onSelect={setActiveId}
                 onClose={() => setDrawerOpen(false)}
+                onDelete={ctrl.remove}
+                canDelete={ctrl.ownsComment}
               />
             </div>
           )}

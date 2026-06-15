@@ -37,6 +37,9 @@ type PreviewProps = {
   /** Owner-only actions, shown in the focused-marker popover. */
   onResolve?: (id: string) => void
   onDelete?: (id: string) => void
+  /** Per-comment delete gate (e.g. a viewer may only delete their own). When
+   *  omitted, delete is allowed for every comment (owner). */
+  canDelete?: (id: string) => boolean
 }
 
 export default function Preview({
@@ -48,6 +51,7 @@ export default function Preview({
   onCreate,
   onResolve,
   onDelete,
+  canDelete,
 }: PreviewProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const surfaceRef = useRef<HTMLDivElement>(null)
@@ -275,7 +279,7 @@ export default function Preview({
                   comment={c}
                   focused={focused}
                   onResolve={onResolve}
-                  onDelete={onDelete}
+                  onDelete={onDelete && (!canDelete || canDelete(c.id)) ? onDelete : undefined}
                   onClose={() => onSelect(null)}
                 />
               </div>

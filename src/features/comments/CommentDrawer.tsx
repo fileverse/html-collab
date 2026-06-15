@@ -10,6 +10,9 @@ type Props = {
   onClose?: () => void
   onResolve?: (id: string) => void
   onDelete?: (id: string) => void
+  /** Per-comment delete gate (a viewer may only delete their own). When omitted,
+   *  delete is allowed for every comment (owner). */
+  canDelete?: (id: string) => boolean
 }
 
 /** Floating right-hand comments panel (Figma: drawer-comments). */
@@ -20,6 +23,7 @@ export default function CommentDrawer({
   onClose,
   onResolve,
   onDelete,
+  canDelete,
 }: Props) {
   const open = comments.filter((c) => !c.resolved).length
 
@@ -64,7 +68,7 @@ export default function CommentDrawer({
               active={c.id === activeId}
               onSelect={() => onSelect(c.id === activeId ? null : c.id)}
               onResolve={onResolve ? () => onResolve(c.id) : undefined}
-              onDelete={onDelete ? () => onDelete(c.id) : undefined}
+              onDelete={onDelete && (!canDelete || canDelete(c.id)) ? () => onDelete(c.id) : undefined}
             />
           ))}
         </div>
