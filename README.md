@@ -7,7 +7,7 @@
 Got an HTML page from an AI agent and want your team to weigh in? Drop the file
 in, click on anything to leave a comment, and share a link. When everyone’s
 feedback is in, export the page with all the notes baked in - ready to paste
-straight back to Claude, Cursor, ChatGPT, or Grok.
+straight back to Claude, Cursor, ChatGPT, or Grok. 
 
 ![Editor with anchored comments](docs/editor.png)
 
@@ -15,11 +15,7 @@ straight back to Claude, Cursor, ChatGPT, or Grok.
 
 ## Why
 
-Giving feedback on an AI‑generated page is awkward. You end up writing things
-like *“make the button under the heading a bit bigger”* and hoping the model
-guesses which button. This tool lets anyone point **right at** an element and
-leave a note there - so the feedback is unambiguous, and you can hand it back to
-the AI without re‑explaining.
+Giving feedback to your peers about an AI‑generated page they created via LLMs is cumbersome. You end up writing things on a chat, slack, or going on a call saying like “make the button under the heading a bit bigger”. This mini app lets anyone point right at an element and leave a note there so the feedback is unambiguous for the peers and the LLM, and you can hand it back to the AI without re‑explaining. All saved on the downloaded HTML file!
 
 ## How it works
 
@@ -97,3 +93,5 @@ A few notes for the curious:
 ## License
 
 [GNU GPL v3](LICENSE) © Fileverse
+
+This oss POC is part of Fileverse experiments of polishing multiplayer and e2ee collaboration on any file out there, you can already see the end result on ddocs.new or dsheets.new! More to come soon :yellow_heart:
